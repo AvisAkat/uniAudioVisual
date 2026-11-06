@@ -43,7 +43,7 @@
         </form>
         
         <p class="auth-switch">New to AVBMS? 
-           <a href="{{ route('auth.register') }}"> <button type="button" data-show-auth="register">Create an account</button></a>
+           <a href="{{ route('auth.registerForm') }}"> <button type="button" data-show-auth="register">Create an account</button></a>
         </p>
     </section>
 

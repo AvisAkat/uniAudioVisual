@@ -1,56 +1,103 @@
-<div class="toast-region" x-data="{
-        toasts: [],
-        nextId: 0,
+<div
+    class="toast-region"
+    id="toast-region"
+    aria-live="polite"
+    aria-atomic="false"
+></div>
 
-        show(event) {
-            const detail = event.detail || {};
+<script>
+    window.showToast = function (message, type = 'info', title = '') {
+        const region = document.getElementById('toast-region');
 
-            const toast = {
-                id: ++this.nextId,
-                title: detail.title || 'Notification',
-                message: detail.message || '',
-                type: ['success', 'error', 'warning', 'info'].includes(detail.type)
-                    ? detail.type
-                    : 'info'
-            };
-
-            this.toasts.push(toast);
-
-            setTimeout(() => this.remove(toast.id), 4000);
-        },
-
-        remove(id) {
-            this.toasts = this.toasts.filter(toast => toast.id !== id);
+        if (!region) {
+            console.error('Toast region was not found.');
+            return;
         }
-    }" x-on:toast.window="show($event)" aria-live="polite" aria-atomic="false">
-    <template x-for="toast in toasts" :key="toast.id">
-        <div class="toast" :class="toast.type" x-transition role="status">
-            <div class="toast-icon">
-                <template x-if="toast.type === 'success'">
-                    <span>✓</span>
-                </template>
 
-                <template x-if="toast.type === 'error'">
-                    <span>!</span>
-                </template>
+        const allowedTypes = ['success', 'error', 'warning', 'info'];
 
-                <template x-if="toast.type === 'warning'">
-                    <span>⚠</span>
-                </template>
+        if (!allowedTypes.includes(type)) {
+            type = 'info';
+        }
 
-                <template x-if="toast.type === 'info'">
-                    <span>i</span>
-                </template>
-            </div>
+        const headings = {
+            success: 'Success',
+            error: 'Something went wrong',
+            warning: 'Please note',
+            info: 'Notification'
+        };
 
-            <div class="toast-copy">
-                <strong x-text="toast.title"></strong>
-                <p x-text="toast.message"></p>
-            </div>
+        const icons = {
+            success: '✓',
+            error: '✕',
+            warning: '!',
+            info: 'i'
+        };
 
-            <button type="button" class="toast-close" aria-label="Dismiss notification" @click="remove(toast.id)">
-                &times;
-            </button>
-        </div>
-    </template>
-</div>
+        const toast = document.createElement('div');
+
+        toast.className = `toast ${type}`;
+        toast.setAttribute(
+            'role',
+            type === 'error' ? 'alert' : 'status'
+        );
+
+        const icon = document.createElement('span');
+        icon.className = 'toast-icon';
+        icon.textContent = icons[type];
+
+        const copy = document.createElement('span');
+        copy.className = 'toast-copy';
+
+        const heading = document.createElement('strong');
+        heading.textContent = title || headings[type];
+
+        const text = document.createElement('p');
+        text.textContent = message;
+
+        copy.append(heading, text);
+
+        const close = document.createElement('button');
+        close.className = 'toast-close';
+        close.type = 'button';
+        close.setAttribute('aria-label', 'Dismiss notification');
+        close.textContent = '×';
+
+        toast.append(icon, copy, close);
+        region.appendChild(toast);
+
+        const removeToast = () => {
+            if (!toast.isConnected) return;
+
+            toast.classList.add('is-leaving');
+
+            setTimeout(() => toast.remove(), 250);
+        };
+
+        close.addEventListener('click', removeToast);
+
+        setTimeout(removeToast, 5200);
+    };
+
+    // Listen for notifications dispatched by Livewire.
+    window.addEventListener('toast', function (event) {
+        const data = event.detail || {};
+
+        window.showToast(
+            data.message || '',
+            data.type || 'info',
+            data.title || ''
+        );
+    });
+
+    // Display notifications flashed by Laravel controllers.
+    const flashToast = @js(session('toast'));
+
+    if (flashToast) {
+        window.showToast(
+            flashToast.message || '',
+            flashToast.type || 'info',
+            flashToast.title || ''
+        );
+    }
+</script>
