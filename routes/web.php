@@ -15,12 +15,16 @@ Route::prefix('auth')->name('auth.')->middleware('guest')->controller(AuthContro
     Route::post('/login', 'login')->name('login_handler');
 });
 
-// Student Routes
-Route::prefix('student')->name('student.')->middleware(['auth', 'student'])->controller(StudentController::class)->group(function () {
-    Route::get('/dashboard', 'showDashboard')->name('dashboard');
-});
+Route::middleware('auth')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout'])->name('auth.logout');
 
-// Staff Routes
-Route::prefix('staff')->name('staff.')->middleware(['auth', 'staff'])->controller(StaffController::class)->group(function () {
-    Route::get('/dashboard', 'showDashboard')->name('dashboard');
+    // Student Routes
+    Route::prefix('student')->name('student.')->middleware('student')->controller(StudentController::class)->group(function () {
+        Route::get('/dashboard', 'showDashboard')->name('dashboard');
+    });
+
+    // Staff Routes
+    Route::prefix('staff')->name('staff.')->middleware('staff')->controller(StaffController::class)->group(function () {
+        Route::get('/dashboard', 'showDashboard')->name('dashboard');
+    });
 });

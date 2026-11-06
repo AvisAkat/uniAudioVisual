@@ -191,10 +191,14 @@
                 <span class="avatar" id="sidebar-avatar">DS</span>
                 <span class="brand-copy sidebar-user-copy"><strong id="sidebar-user-name">Demo Student</strong><small
                         id="sidebar-user-email">student@avms.com</small></span>
-                <button class="icon-button logout-button" type="button" data-logout="" aria-label="Sign out"
-                    title="Sign out"><span data-icon="logout"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M10 17l5-5-5-5M15 12H3M15 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"></path>
-                        </svg></span></button>
+                <form method="POST" action="{{ route('auth.logout') }}">
+                    @csrf
+                    <button class="icon-button logout-button" type="submit" aria-label="Sign out"
+                        title="Sign out"><span data-icon="logout"><svg class="icon " viewBox="0 0 24 24"
+                                aria-hidden="true">
+                                <path d="M10 17l5-5-5-5M15 12H3M15 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"></path>
+                            </svg></span></button>
+                </form>
             </div>
         </aside>
         <div class="sidebar-backdrop" id="sidebar-backdrop" hidden=""></div>

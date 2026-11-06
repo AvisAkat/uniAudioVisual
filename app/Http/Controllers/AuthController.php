@@ -48,7 +48,7 @@ class AuthController extends Controller
             ]);
         }
 
-        if (!$created) {
+        if(!$created) {
             return back()->withInput()->with('toast', [
                 'title' => 'Account Creation Failed',
                 'type' => 'error',
@@ -134,5 +134,19 @@ class AuthController extends Controller
                 'message' => 'Incorrect email or password.',
             ]);
         }
+    }
+
+    public function logout(Request $request): RedirectResponse
+    {
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('auth.login')->with('toast', [
+            'title' => 'Logged Out',
+            'type' => 'success',
+            'message' => 'You have been logged out successfully.',
+        ]);
     }
 }
