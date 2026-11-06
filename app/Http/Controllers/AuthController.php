@@ -56,7 +56,7 @@ class AuthController extends Controller
             ]);
         } else {
 
-            return to_route('auth.loginForm')
+            return to_route('auth.login')
                 ->with('toast', [
                     'title' => 'Account Created',
                     'type' => 'success',

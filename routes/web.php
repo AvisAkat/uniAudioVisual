@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\StudentController;
 use App\Http\Controllers\StaffController;
+use App\Http\Controllers\StudentController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')->name('home');
@@ -16,12 +16,11 @@ Route::prefix('auth')->name('auth.')->middleware('guest')->controller(AuthContro
 });
 
 // Student Routes
-Route::prefix('student')->name('student.')->middleware(['auth'])->controller(StudentController::class)->group(function () {
+Route::prefix('student')->name('student.')->middleware(['auth', 'student'])->controller(StudentController::class)->group(function () {
     Route::get('/dashboard', 'showDashboard')->name('dashboard');
 });
 
-
 // Staff Routes
-Route::prefix('staff')->name('staff.')->middleware(['auth'])->controller(StaffController::class)->group(function () {
+Route::prefix('staff')->name('staff.')->middleware(['auth', 'staff'])->controller(StaffController::class)->group(function () {
     Route::get('/dashboard', 'showDashboard')->name('dashboard');
 });
