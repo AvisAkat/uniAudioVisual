@@ -68,7 +68,7 @@
             </button>
         </form>
         <p class="auth-switch">Already registered?
-            <a href="{{ route('auth.loginForm') }}">
+            <a href="{{ route('auth.login') }}">
                 <button type="button" data-show-auth="login">Sign in instead</button>
             </a>
         </p>
