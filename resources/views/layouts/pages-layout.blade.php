@@ -53,7 +53,7 @@
                         </svg></span></button>
             </div>
             <div class="sidebar-role"><span class="role-pulse"></span><span class="brand-copy"><small>Signed in
-                        as</small><strong id="sidebar-role-name">Student portal</strong></span></div>
+                        as</small><strong id="sidebar-role-name" style="text-transform: capitalize;">{{ auth()->user()->role }} portal</strong></span></div>
             <nav class="sidebar-nav">
                 <div class="nav-group">
                     <span class="nav-group-label brand-copy">Workspace</span>
@@ -188,9 +188,9 @@
                 </div>
             </div>
             <div class="sidebar-user">
-                <span class="avatar" id="sidebar-avatar">DS</span>
-                <span class="brand-copy sidebar-user-copy"><strong id="sidebar-user-name">Demo Student</strong><small
-                        id="sidebar-user-email">student@avms.com</small></span>
+                <span class="avatar" id="sidebar-avatar" style="text-transform: uppercase">{{ substr(auth()->user()->name, 0, 2) }}</span>
+                <span class="brand-copy sidebar-user-copy"><strong id="sidebar-user-name">{{ auth()->user()->name }}</strong><small
+                        id="sidebar-user-email">{{ auth()->user()->email }}</small></span>
                 <form method="POST" action="{{ route('auth.logout') }}">
                     @csrf
                     <button class="icon-button logout-button" type="submit" aria-label="Sign out"
@@ -221,15 +221,8 @@
                                 aria-hidden="true">
                                 <rect x="3" y="5" width="18" height="16" rx="2"></rect>
                                 <path d="M16 3v4M8 3v4M3 10h18M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"></path>
-                            </svg></span><span id="topbar-date">Fri, 6 Nov 2026</span></span>
-                    <button class="icon-button theme-toggle" type="button" data-theme-toggle=""
-                        aria-label="Switch to light mode" title="Switch to light mode"><span data-theme-icon=""><svg
-                                class="icon " viewBox="0 0 24 24" aria-hidden="true">
-                                <circle cx="12" cy="12" r="4"></circle>
-                                <path
-                                    d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4">
-                                </path>
-                            </svg></span></button>
+                            </svg></span><span id="topbar-date">{{ now()->format('D, j M Y') }}</span></span>
+                        <x-theme-toggle />
                     <div class="notification-wrap">
                         <button class="icon-button notification-button" type="button" id="notification-toggle"
                             aria-label="Open notifications" aria-expanded="false"><span data-icon="bell"><svg
@@ -239,8 +232,10 @@
                                 hidden="">0</span></button>
                     </div>
                     <button class="topbar-profile" type="button" data-view="overview" aria-label="Open dashboard"><span
-                            class="avatar" id="topbar-avatar">DS</span><span><strong id="topbar-user-name">Demo
-                                Student</strong><small id="topbar-role">Student</small></span></button>
+                            class="avatar" id="topbar-avatar" style="text-transform: uppercase">{{ substr(auth()->user()->name, 0, 2) }}</span><span><strong id="topbar-user-name">
+                                {{ auth()->user()->name }}</strong><small id="topbar-role" style="text-transform: capitalize;">
+                                    {{ auth()->user()->role }}
+                                </small></span></button>
                 </div>
             </header>
 
