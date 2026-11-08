@@ -2,6 +2,7 @@
 
 use Livewire\Component;
 use App\Models\Equipment;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -24,10 +25,62 @@ new class extends Component {
 
   public string $description = '';
 
+  public string $search = '';
+
+  public string $categoryFilter = 'All';
+
+  public string $conditionFilter = 'All';
+
+  public string $stockDate = '';
+
+  public string $stockSlot = 'slot-1';
+
+  public function mount(): void
+  {
+    $this->stockDate = now()->toDateString();
+  }
+
   #[Computed]
   public function equipmentItems(): Collection
   {
-    return Equipment::query()->orderBy('name')->get();
+    return Equipment::query()
+      ->when($this->search !== '', function (Builder $query): void {
+        $searchTerm = '%'.$this->search.'%';
+
+        $query->where(function (Builder $query) use ($searchTerm): void {
+          $query->where('name', 'like', $searchTerm)
+            ->orWhere('description', 'like', $searchTerm)
+            ->orWhere('asset_code', 'like', $searchTerm);
+        });
+      })
+      ->when($this->categoryFilter !== 'All', fn (Builder $query) => $query->where('category', $this->categoryFilter))
+      ->when($this->conditionFilter !== 'All', fn (Builder $query) => $query->where('condition', $this->conditionFilter))
+      ->orderBy('name')
+      ->get();
+  }
+
+  #[Computed]
+  public function stockSlots(): array
+  {
+    return [
+      'slot-1' => '7:30 AM – 10:30 AM',
+      'slot-2' => '11:00 AM – 02:15 PM',
+      'slot-3' => '02:15 PM – 5:15 PM',
+    ];
+  }
+
+  #[Computed]
+  public function selectedStockSlot(): string
+  {
+    return $this->stockSlots[$this->stockSlot] ?? $this->stockSlots['slot-1'];
+  }
+
+  public function resetFilters(): void
+  {
+    $this->reset('search', 'categoryFilter', 'conditionFilter');
+    $this->stockDate = now()->toDateString();
+    $this->stockSlot = 'slot-1';
+    unset($this->equipmentItems, $this->selectedStockSlot);
   }
 
   public function openCreateModal(): void
@@ -174,7 +227,7 @@ new class extends Component {
       <div class="section-heading">
         <div>
           <h2>Equipment inventory</h2>
-          <p>Stock figures below are calculated for <strong>8 Nov 2026</strong>, <strong>2:00 PM – 3:00 PM</strong>.</p>
+          <p>Inventory view for <strong>{{ $stockDate }}</strong>, <strong>{{ $this->selectedStockSlot }}</strong>.</p>
         </div>
         <div class="section-actions"><button class="button button-primary" type="button"
             wire:click="openCreateModal"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
@@ -195,28 +248,28 @@ new class extends Component {
               <circle cx="11" cy="11" r="7"></circle>
               <path d="m20 20-4-4"></path>
             </svg></span><input id="inventory-search" type="search" value="" placeholder="Search equipment inventory"
-            aria-label="Search inventory"></div>
-        <div class="control-group"><label for="inventory-category">Category</label><select id="inventory-category">
+            aria-label="Search inventory" wire:model.live.debounce.300ms="search"></div>
+          <div class="control-group"><label for="inventory-category">Category</label><select id="inventory-category" wire:model.live="categoryFilter">
             <option value="All">All categories</option>
             <option value="Projectors">Projectors</option>
             <option value="HDMI Cables">HDMI Cables</option>
             <option value="Extension Boards">Extension Boards</option>
             <option value="Audio Systems">Audio Systems</option>
           </select></div>
-        <div class="control-group"><label for="inventory-condition">Condition</label><select id="inventory-condition">
+        <div class="control-group"><label for="inventory-condition">Condition</label><select id="inventory-condition" wire:model.live="conditionFilter">
             <option value="All">All conditions</option>
             <option>Good</option>
             <option>Under Maintenance</option>
             <option>Damaged</option>
           </select></div>
         <div class="control-group"><label for="inventory-date">Stock date</label><input id="inventory-date" type="date"
-            value="2026-11-08"></div>
-        <div class="control-group"><label for="inventory-slot">Stock time</label><select id="inventory-slot">
-            <option value="slot-1">7:30 AM – 10:30 AM</option>
-            <option value="slot-2">11:00 AM – 02:15 PM</option>
-            <option value="slot-3">02:15 PM – 5:15 PM</option>
+            wire:model.live="stockDate"></div>
+        <div class="control-group"><label for="inventory-slot">Stock time</label><select id="inventory-slot" wire:model.live="stockSlot">
+            @foreach ($this->stockSlots as $slotValue => $slotLabel)
+              <option value="{{ $slotValue }}">{{ $slotLabel }}</option>
+            @endforeach
           </select></div><button class="button button-outline" type="button"
-          data-action="reset-inventory-filters">Reset</button>
+          wire:click="resetFilters">Reset</button>
       </div>
       <div class="results-meta"><span>{{ $this->equipmentItems->count() }} equipment type(s) ·
           {{ $this->equipmentItems->sum('total_quantity') }} total units</span><span>Reserved = total quantity minus

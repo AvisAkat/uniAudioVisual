@@ -137,3 +137,57 @@ it('shows the selected equipment in the three-slot availability modal', function
         ->assertSee('2:15 PM – 5:15 PM')
         ->assertSee('3');
 });
+
+it('filters inventory and resets all filter state', function () {
+    $staff = User::factory()->create([
+        'role' => 'staff',
+        'university_id' => fake()->unique()->numerify('STAFF-####'),
+    ]);
+    Equipment::query()->create([
+        'name' => 'Lecture Projector',
+        'asset_code' => 'EQ-FILTER001',
+        'category' => 'Projectors',
+        'description' => 'Projector for classrooms.',
+        'total_quantity' => 3,
+        'available_quantity' => 3,
+        'condition' => 'Good',
+        'status' => 'Available',
+    ]);
+    Equipment::query()->create([
+        'name' => 'Damaged HDMI Cable',
+        'asset_code' => 'EQ-FILTER002',
+        'category' => 'HDMI Cables',
+        'description' => 'Three metre HDMI cable.',
+        'total_quantity' => 2,
+        'available_quantity' => 2,
+        'condition' => 'Damaged',
+        'status' => 'Available',
+    ]);
+
+    $this->actingAs($staff);
+
+    Livewire::test('staff.inventory')
+        ->set('search', 'HDMI')
+        ->assertSee('Damaged HDMI Cable')
+        ->assertDontSee('Lecture Projector')
+        ->set('search', '')
+        ->set('categoryFilter', 'Projectors')
+        ->assertSee('Lecture Projector')
+        ->assertDontSee('Damaged HDMI Cable')
+        ->set('categoryFilter', 'All')
+        ->set('conditionFilter', 'Damaged')
+        ->assertSee('Damaged HDMI Cable')
+        ->assertDontSee('Lecture Projector')
+        ->set('stockDate', '2026-10-01')
+        ->set('stockSlot', 'slot-3')
+        ->assertSee('2026-10-01')
+        ->assertSee('02:15 PM – 5:15 PM')
+        ->call('resetFilters')
+        ->assertSet('search', '')
+        ->assertSet('categoryFilter', 'All')
+        ->assertSet('conditionFilter', 'All')
+        ->assertSet('stockDate', now()->toDateString())
+        ->assertSet('stockSlot', 'slot-1')
+        ->assertSee('Lecture Projector')
+        ->assertSee('Damaged HDMI Cable');
+});
