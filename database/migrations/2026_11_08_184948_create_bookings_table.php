@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -13,6 +12,21 @@ return new class extends Migration
     {
         Schema::create('bookings', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')
+                ->constrained()
+                ->cascadeOnDelete();
+            $table->foreignId('equipment_id')
+                ->constrained('equipment')
+                ->cascadeOnDelete();
+            $table->date('booking_date');
+            $table->time('start_time');
+            $table->time('end_time');
+            $table->unsignedInteger('quantity')->default(1);
+            $table->text('purpose')->nullable();
+            $table->text('additional_notes')->nullable();
+            $table->string('status')->default('Pending')->index();
+
+            $table->text('rejection_reason')->nullable();
             $table->timestamps();
         });
     }
