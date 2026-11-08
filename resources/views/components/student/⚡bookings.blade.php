@@ -1,9 +1,204 @@
 <?php
 
+use App\Models\Booking;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Livewire\Component;
 
 new class extends Component {
-    //
+    public string $search = '';
+
+    public string $statusFilter = 'All';
+
+    public string $sortBy = 'newest';
+
+    public ?int $viewingBookingId = null;
+
+    public ?int $cancellingBookingId = null;
+
+    #[\Livewire\Attributes\Computed]
+    public function allBookings(): Collection
+    {
+        return Booking::query()
+            ->where('user_id', auth()->id())
+            ->with('equipment')
+            ->get();
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function bookingItems(): Collection
+    {
+        $searchTerm = Str::lower(trim($this->search));
+
+        $bookings = $this->allBookings
+            ->when($this->statusFilter !== 'All', fn(Collection $bookings) => $bookings->where('status', $this->statusFilter))
+            ->when($searchTerm !== '', function (Collection $bookings) use ($searchTerm): Collection {
+                return $bookings->filter(function (Booking $booking) use ($searchTerm): bool {
+                    return Str::contains(Str::lower($this->bookingReference($booking)), $searchTerm)
+                        || Str::contains(Str::lower($booking->equipment?->name ?? ''), $searchTerm)
+                        || Str::contains(Str::lower($booking->purpose ?? ''), $searchTerm);
+                });
+            });
+
+        return match ($this->sortBy) {
+            'oldest' => $bookings->sortBy('created_at')->values(),
+            'date-asc' => $bookings->sortBy(fn(Booking $booking) => $booking->booking_date->timestamp)->values(),
+            'date-desc' => $bookings->sortByDesc(fn(Booking $booking) => $booking->booking_date->timestamp)->values(),
+            'status' => $bookings->sortBy('status')->values(),
+            default => $bookings->sortByDesc('created_at')->values(),
+        };
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function viewedBooking(): ?Booking
+    {
+        return $this->viewingBookingId === null
+            ? null
+            : $this->studentBookings()->with('equipment')->find($this->viewingBookingId);
+    }
+
+    #[\Livewire\Attributes\Computed]
+    public function bookingToCancel(): ?Booking
+    {
+        return $this->cancellingBookingId === null
+            ? null
+            : $this->studentBookings()->with('equipment')->find($this->cancellingBookingId);
+    }
+
+    public function viewBooking(int $bookingId): void
+    {
+        $this->authorizeStudent();
+
+        $booking = $this->studentBookings()->findOrFail($bookingId);
+        $this->viewingBookingId = $booking->id;
+        unset($this->viewedBooking);
+    }
+
+    public function closeBookingView(): void
+    {
+        $this->viewingBookingId = null;
+        unset($this->viewedBooking);
+    }
+
+    public function openCancelBooking(int $bookingId): void
+    {
+        $this->authorizeStudent();
+
+        $booking = $this->studentBookings()->findOrFail($bookingId);
+
+        if (!$this->isCancellable($booking)) {
+            $this->dispatch(
+                'toast',
+                title: 'Booking cannot be cancelled',
+                message: 'Only pending or approved bookings can be cancelled before their start time.',
+                type: 'error'
+            );
+
+            return;
+        }
+
+        $this->closeBookingView();
+        $this->cancellingBookingId = $booking->id;
+        unset($this->bookingToCancel);
+    }
+
+    public function closeCancelBooking(): void
+    {
+        $this->cancellingBookingId = null;
+        unset($this->bookingToCancel);
+    }
+
+    public function cancelBooking(): void
+    {
+        $this->authorizeStudent();
+
+        if ($this->cancellingBookingId === null) {
+            return;
+        }
+
+        $cancelled = DB::transaction(function (): bool {
+            $booking = $this->studentBookings()
+                ->lockForUpdate()
+                ->findOrFail($this->cancellingBookingId);
+
+            if (!$this->isCancellable($booking)) {
+                return false;
+            }
+
+            $booking->status = 'Cancelled';
+
+            return $booking->save();
+        });
+
+        if (!$cancelled) {
+            $this->dispatch(
+                'toast',
+                title: 'Booking cannot be cancelled',
+                message: 'The booking has started or is no longer pending or approved.',
+                type: 'error'
+            );
+
+            $this->closeCancelBooking();
+            unset($this->allBookings, $this->bookingItems);
+
+            return;
+        }
+
+        $this->closeCancelBooking();
+        unset($this->allBookings, $this->bookingItems);
+
+        $this->dispatch(
+            'toast',
+            title: 'Booking cancelled',
+            message: 'Your booking has been cancelled.',
+            type: 'success'
+        );
+    }
+
+    public function resetFilters(): void
+    {
+        $this->reset('search', 'statusFilter', 'sortBy');
+        $this->statusFilter = 'All';
+        $this->sortBy = 'newest';
+        unset($this->allBookings, $this->bookingItems);
+    }
+
+    private function studentBookings(): \Illuminate\Database\Eloquent\Builder
+    {
+        return Booking::query()->where('user_id', auth()->id());
+    }
+
+    private function authorizeStudent(): void
+    {
+        abort_unless(auth()->user()?->role === 'student', 403);
+    }
+
+    public function isCancellable(Booking $booking): bool
+    {
+        if (!in_array($booking->status, ['Pending', 'Approved'], true)) {
+            return false;
+        }
+
+        $startsAt = Carbon::parse(
+            Carbon::parse($booking->booking_date)->toDateString() . ' ' . $booking->start_time
+        );
+
+        return $startsAt->isFuture();
+    }
+
+    public function bookingReference(Booking $booking): string
+    {
+        return 'AVB-' . Carbon::parse($booking->booking_date)->format('ymd') . '-' . str_pad((string) $booking->id, 4, '0', STR_PAD_LEFT);
+    }
+
+    public function formattedTimeSlot(Booking $booking): string
+    {
+        return Carbon::parse($booking->start_time)->format('g:i A')
+            . ' – '
+            . Carbon::parse($booking->end_time)->format('g:i A');
+    }
 };
 ?>
 
@@ -31,9 +226,10 @@ new class extends Component {
                             <circle cx="11" cy="11" r="7"></circle>
                             <path d="m20 20-4-4"></path>
                         </svg></span><input id="student-booking-search" type="search" value=""
-                        placeholder="Search reference, equipment or purpose" aria-label="Search my bookings"></div>
+                        placeholder="Search reference, equipment or purpose" aria-label="Search my bookings"
+                        wire:model.live.debounce.300ms="search"></div>
                 <div class="control-group"><label for="student-booking-status">Status</label><select
-                        id="student-booking-status">
+                        id="student-booking-status" wire:model.live="statusFilter">
                         <option value="All">All statuses</option>
                         <option>Pending</option>
                         <option>Approved</option>
@@ -43,16 +239,17 @@ new class extends Component {
                         <option>Expired</option>
                     </select></div>
                 <div class="control-group"><label for="student-booking-sort">Sort records</label><select
-                        id="student-booking-sort">
+                        id="student-booking-sort" wire:model.live="sortBy">
                         <option value="newest" selected="">Newest submitted</option>
                         <option value="oldest">Oldest submitted</option>
                         <option value="date-asc">Booking date ↑</option>
                         <option value="date-desc">Booking date ↓</option>
                         <option value="status">Status</option>
                     </select></div><button class="button button-outline" type="button"
-                    data-action="reset-student-bookings">Reset</button>
+                    wire:click="resetFilters">Reset</button>
             </div>
-            <div class="results-meta"><span>7 booking(s) found · 7 total</span><span>Approved and pending reservations
+            <div class="results-meta"><span>{{ $this->bookingItems->count() }} booking(s) found ·
+                    {{ $this->allBookings->count() }} total</span><span>Approved and pending reservations
                     can be cancelled before their start time</span></div>
             <div class="table-card">
                 <div class="table-wrap">
@@ -71,174 +268,57 @@ new class extends Component {
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td data-label="Reference"><button class="reference-button" type="button"
-                                        data-action="view-booking" data-id="b-003">AVB-261110-0003</button></td>
-                                <td data-label="Equipment"><span class="cell-primary">Portable PA Audio
-                                        System</span><span class="cell-secondary">Audio Systems</span></td>
-                                <td data-label="Quantity">1</td>
-                                <td data-label="Booking date"><span class="nowrap">10 Nov 2026</span></td>
-                                <td data-label="Time slot">1:00 PM – 2:00 PM</td>
-                                <td data-label="Purpose"><span class="purpose-cell"
-                                        title="Debate club public speaking practice">Debate club public speaking
-                                        practice</span></td>
-                                <td data-label="Status"><span class="status-badge status-pending">Pending</span></td>
-                                <td data-label="Submitted"><span class="nowrap">5 Nov 2026, 10:12</span></td>
-                                <td data-label="Actions">
-                                    <div class="table-actions"><button class="icon-button" type="button"
-                                            data-action="view-booking" data-id="b-003" title="View details"
-                                            aria-label="View AVB-261110-0003"><svg class="icon " viewBox="0 0 24 24"
-                                                aria-hidden="true">
-                                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg></button><button class="icon-button action-reject" type="button"
-                                            data-action="cancel-booking" data-id="b-003" title="Cancel booking"
-                                            aria-label="Cancel AVB-261110-0003"><svg class="icon " viewBox="0 0 24 24"
-                                                aria-hidden="true">
-                                                <circle cx="12" cy="12" r="9"></circle>
-                                                <path d="m5.5 5.5 13 13"></path>
-                                            </svg></button></div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td data-label="Reference"><button class="reference-button" type="button"
-                                        data-action="view-booking" data-id="b-002">AVB-261106-0002</button></td>
-                                <td data-label="Equipment"><span class="cell-primary">High-Speed HDMI Cable
-                                        (3m)</span><span class="cell-secondary">HDMI Cables</span></td>
-                                <td data-label="Quantity">3</td>
-                                <td data-label="Booking date"><span class="nowrap">6 Nov 2026</span></td>
-                                <td data-label="Time slot">11:00 AM – 12:00 PM</td>
-                                <td data-label="Purpose"><span class="purpose-cell"
-                                        title="Engineering society Arduino workshop">Engineering society Arduino
-                                        workshop</span></td>
-                                <td data-label="Status"><span class="status-badge status-expired">Expired</span></td>
-                                <td data-label="Submitted"><span class="nowrap">5 Nov 2026, 9:12</span></td>
-                                <td data-label="Actions">
-                                    <div class="table-actions"><button class="icon-button" type="button"
-                                            data-action="view-booking" data-id="b-002" title="View details"
-                                            aria-label="View AVB-261106-0002"><svg class="icon " viewBox="0 0 24 24"
-                                                aria-hidden="true">
-                                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg></button></div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td data-label="Reference"><button class="reference-button" type="button"
-                                        data-action="view-booking" data-id="b-001">AVB-261107-0001</button></td>
-                                <td data-label="Equipment"><span class="cell-primary">Epson EB-2265U
-                                        Projector</span><span class="cell-secondary">Projectors</span></td>
-                                <td data-label="Quantity">2</td>
-                                <td data-label="Booking date"><span class="nowrap">7 Nov 2026</span></td>
-                                <td data-label="Time slot">9:00 AM – 10:00 AM</td>
-                                <td data-label="Purpose"><span class="purpose-cell"
-                                        title="Final-year project proposal rehearsal">Final-year project proposal
-                                        rehearsal</span></td>
-                                <td data-label="Status"><span class="status-badge status-expired">Expired</span></td>
-                                <td data-label="Submitted"><span class="nowrap">5 Nov 2026, 8:12</span></td>
-                                <td data-label="Actions">
-                                    <div class="table-actions"><button class="icon-button" type="button"
-                                            data-action="view-booking" data-id="b-001" title="View details"
-                                            aria-label="View AVB-261107-0001"><svg class="icon " viewBox="0 0 24 24"
-                                                aria-hidden="true">
-                                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg></button></div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td data-label="Reference"><button class="reference-button" type="button"
-                                        data-action="view-booking" data-id="b-004">AVB-261108-0004</button></td>
-                                <td data-label="Equipment"><span class="cell-primary">8-Way Surge Extension
-                                        Board</span><span class="cell-secondary">Extension Boards</span></td>
-                                <td data-label="Quantity">2</td>
-                                <td data-label="Booking date"><span class="nowrap">8 Nov 2026</span></td>
-                                <td data-label="Time slot">10:00 AM – 11:00 AM</td>
-                                <td data-label="Purpose"><span class="purpose-cell"
-                                        title="Design portfolio display">Design portfolio display</span></td>
-                                <td data-label="Status"><span class="status-badge status-cancelled">Cancelled</span>
-                                </td>
-                                <td data-label="Submitted"><span class="nowrap">4 Nov 2026, 11:12</span></td>
-                                <td data-label="Actions">
-                                    <div class="table-actions"><button class="icon-button" type="button"
-                                            data-action="view-booking" data-id="b-004" title="View details"
-                                            aria-label="View AVB-261108-0004"><svg class="icon " viewBox="0 0 24 24"
-                                                aria-hidden="true">
-                                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg></button></div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td data-label="Reference"><button class="reference-button" type="button"
-                                        data-action="view-booking" data-id="b-006">AVB-261102-0006</button></td>
-                                <td data-label="Equipment"><span class="cell-primary">Portable PA Audio
-                                        System</span><span class="cell-secondary">Audio Systems</span></td>
-                                <td data-label="Quantity">1</td>
-                                <td data-label="Booking date"><span class="nowrap">2 Nov 2026</span></td>
-                                <td data-label="Time slot">12:00 PM – 1:00 PM</td>
-                                <td data-label="Purpose"><span class="purpose-cell" title="Outdoor club social">Outdoor
-                                        club social</span></td>
-                                <td data-label="Status"><span class="status-badge status-rejected">Rejected</span><span
-                                        class="cell-secondary">Reason in details</span></td>
-                                <td data-label="Submitted"><span class="nowrap">30 Oct 2026, 13:12</span></td>
-                                <td data-label="Actions">
-                                    <div class="table-actions"><button class="icon-button" type="button"
-                                            data-action="view-booking" data-id="b-006" title="View details"
-                                            aria-label="View AVB-261102-0006"><svg class="icon " viewBox="0 0 24 24"
-                                                aria-hidden="true">
-                                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg></button></div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td data-label="Reference"><button class="reference-button" type="button"
-                                        data-action="view-booking" data-id="b-005">AVB-261029-0005</button></td>
-                                <td data-label="Equipment"><span class="cell-primary">Epson EB-2265U
-                                        Projector</span><span class="cell-secondary">Projectors</span></td>
-                                <td data-label="Quantity">1</td>
-                                <td data-label="Booking date"><span class="nowrap">29 Oct 2026</span></td>
-                                <td data-label="Time slot">8:00 AM – 9:00 AM</td>
-                                <td data-label="Purpose"><span class="purpose-cell"
-                                        title="Multimedia systems practical">Multimedia systems practical</span></td>
-                                <td data-label="Status"><span class="status-badge status-completed">Completed</span>
-                                </td>
-                                <td data-label="Submitted"><span class="nowrap">26 Oct 2026, 12:12</span></td>
-                                <td data-label="Actions">
-                                    <div class="table-actions"><button class="icon-button" type="button"
-                                            data-action="view-booking" data-id="b-005" title="View details"
-                                            aria-label="View AVB-261029-0005"><svg class="icon " viewBox="0 0 24 24"
-                                                aria-hidden="true">
-                                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg></button></div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td data-label="Reference"><button class="reference-button" type="button"
-                                        data-action="view-booking" data-id="b-014">AVB-261016-0014</button></td>
-                                <td data-label="Equipment"><span class="cell-primary">8-Way Surge Extension
-                                        Board</span><span class="cell-secondary">Extension Boards</span></td>
-                                <td data-label="Quantity">1</td>
-                                <td data-label="Booking date"><span class="nowrap">16 Oct 2026</span></td>
-                                <td data-label="Time slot">3:00 PM – 4:00 PM</td>
-                                <td data-label="Purpose"><span class="purpose-cell"
-                                        title="Research methods lecture capture">Research methods lecture capture</span>
-                                </td>
-                                <td data-label="Status"><span class="status-badge status-completed">Completed</span>
-                                </td>
-                                <td data-label="Submitted"><span class="nowrap">13 Oct 2026, 14:12</span></td>
-                                <td data-label="Actions">
-                                    <div class="table-actions"><button class="icon-button" type="button"
-                                            data-action="view-booking" data-id="b-014" title="View details"
-                                            aria-label="View AVB-261016-0014"><svg class="icon " viewBox="0 0 24 24"
-                                                aria-hidden="true">
-                                                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg></button></div>
-                                </td>
-                            </tr>
+                            @forelse ($this->bookingItems as $booking)
+                                @php
+                                    $reference = $this->bookingReference($booking);
+                                    $canCancel = $this->isCancellable($booking);
+                                @endphp
+                                <tr wire:key="student-booking-{{ $booking->id }}">
+                                    <td data-label="Reference"><button class="reference-button" type="button"
+                                            wire:click="viewBooking({{ $booking->id }})">{{ $reference }}</button></td>
+                                    <td data-label="Equipment"><span
+                                            class="cell-primary">{{ $booking->equipment?->name ?? 'Equipment removed' }}</span>
+                                        @if ($booking->equipment)
+                                            <span class="cell-secondary">{{ $booking->equipment->category }}</span>
+                                        @endif
+                                    </td>
+                                    <td data-label="Quantity">{{ $booking->quantity }}</td>
+                                    <td data-label="Booking date"><span
+                                            class="nowrap">{{ $booking->booking_date->format('d M Y') }}</span></td>
+                                    <td data-label="Time slot">{{ $this->formattedTimeSlot($booking) }}</td>
+                                    <td data-label="Purpose"><span class="purpose-cell"
+                                            title="{{ $booking->purpose }}">{{ $booking->purpose }}</span></td>
+                                    <td data-label="Status"><span
+                                            class="status-badge status-{{ Str::slug($booking->status) }}">{{ $booking->status }}</span>
+                                    </td>
+                                    <td data-label="Submitted"><span
+                                            class="nowrap">{{ $booking->created_at->format('d M Y, H:i') }}</span></td>
+                                    <td data-label="Actions">
+                                        <div class="table-actions">
+                                            <button class="icon-button" type="button"
+                                                wire:click="viewBooking({{ $booking->id }})" title="View details"
+                                                aria-label="View {{ $reference }}"><svg class="icon" viewBox="0 0 24 24"
+                                                    aria-hidden="true">
+                                                    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                </svg></button>
+                                            @if ($canCancel)
+                                                <button class="icon-button action-reject" type="button"
+                                                    wire:click="openCancelBooking({{ $booking->id }})" title="Cancel booking"
+                                                    aria-label="Cancel {{ $reference }}"><svg class="icon" viewBox="0 0 24 24"
+                                                        aria-hidden="true">
+                                                        <circle cx="12" cy="12" r="9"></circle>
+                                                        <path d="m5.5 5.5 13 13"></path>
+                                                    </svg></button>
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="9" class="empty-state">No bookings match your filters.</td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
@@ -247,106 +327,142 @@ new class extends Component {
     </section>
 
     {{-- View Booking Modal --}}
-    <div class="modal-backdrop" id="modal-backdrop">
-        <div class="modal modal-large" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-            <div id="modal-content">
-                <div class="modal-header">
-                    <div class="modal-heading"><span class="modal-heading-icon "><svg class="icon " viewBox="0 0 24 24"
-                                aria-hidden="true">
-                                <rect x="5" y="4" width="14" height="17" rx="2"></rect>
-                                <path d="M9 4V2h6v2M9 9h6M9 13h6M9 17h4"></path>
-                            </svg></span>
-                        <div>
-                            <h2 id="modal-title">Booking details</h2>
-                            <p>Complete reservation information and status history</p>
-                        </div>
-                    </div><button class="icon-button modal-close" type="button" data-close-modal=""
-                        aria-label="Close dialog"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M18 6 6 18M6 6l12 12"></path>
-                        </svg></button>
-                </div>
-                <div class="modal-body">
-                    <div class="detail-reference"><code>AVB-261110-0003</code><span
-                            class="status-badge status-pending">Pending</span></div>
-                    <div class="detail-grid">
-                        <div class="detail-item"><label>Student</label>
-                            <p>Demo Student<br><span class="muted">STU2026001</span></p>
-                        </div>
-                        <div class="detail-item"><label>Date submitted</label>
-                            <p>5 Nov 2026, 10:12</p>
-                        </div>
-                        <div class="detail-item"><label>Equipment</label>
-                            <p>Portable PA Audio System<br><span class="muted">Audio Systems</span></p>
-                        </div>
-                        <div class="detail-item"><label>Quantity</label>
-                            <p>1 unit(s)</p>
-                        </div>
-                        <div class="detail-item"><label>Booking date</label>
-                            <p>Tuesday, 10 Nov 2026</p>
-                        </div>
-                        <div class="detail-item"><label>Time slot</label>
-                            <p>1:00 PM – 2:00 PM</p>
-                        </div>
-                        <div class="detail-item full"><label>Purpose of booking</label>
-                            <p>Debate club public speaking practice</p>
-                        </div>
-                        <div class="detail-item full"><label>Additional notes</label>
-                            <p>Wireless microphone required.</p>
-                        </div>
-
-                    </div>
-
-                    <div class="booking-timeline">
-                        <h3>Status history</h3>
-                        <div class="timeline-item"><span class="timeline-dot"></span>
-                            <div class="timeline-copy"><strong>Pending</strong>
-                                <p>Booking request submitted</p><small>5 Nov 2026, 10:12 · Demo Student</small>
+    @if ($this->viewedBooking)
+        <div class="modal-backdrop" id="booking-details-backdrop">
+            <div class="modal modal-large" id="booking-details-modal" role="dialog" aria-modal="true"
+                aria-labelledby="booking-details-title">
+                <div id="booking-details-content">
+                    <div class="modal-header">
+                        <div class="modal-heading"><span class="modal-heading-icon "><svg class="icon " viewBox="0 0 24 24"
+                                    aria-hidden="true">
+                                    <rect x="5" y="4" width="14" height="17" rx="2"></rect>
+                                    <path d="M9 4V2h6v2M9 9h6M9 13h6M9 17h4"></path>
+                                </svg></span>
+                            <div>
+                                <h2 id="booking-details-title">Booking details</h2>
+                                <p>Complete reservation information and status history</p>
                             </div>
+                        </div><button class="icon-button modal-close" type="button" wire:click="closeBookingView"
+                            aria-label="Close dialog"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M18 6 6 18M6 6l12 12"></path>
+                            </svg></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="detail-reference">
+                            <code>{{ $this->bookingReference($this->viewedBooking) }}</code>
+                            <span
+                                class="status-badge status-{{ Str::slug($this->viewedBooking->status) }}">{{ $this->viewedBooking->status }}</span>
+                        </div>
+                        <div class="detail-grid">
+                            <div class="detail-item"><label>Student</label>
+                                <p>{{ auth()->user()->name }}<br><span
+                                        class="muted">{{ auth()->user()->university_id }}</span></p>
+                            </div>
+                            <div class="detail-item"><label>Date submitted</label>
+                                <p>{{ $this->viewedBooking->created_at->format('d M Y, H:i') }}</p>
+                            </div>
+                            <div class="detail-item"><label>Equipment</label>
+                                <p>{{ $this->viewedBooking->equipment?->name ?? 'Equipment removed' }}
+                                    @if ($this->viewedBooking->equipment)
+                                        <br><span class="muted">{{ $this->viewedBooking->equipment->category }}</span>
+                                    @endif
+                                </p>
+                            </div>
+                            <div class="detail-item"><label>Quantity</label>
+                                <p>{{ $this->viewedBooking->quantity }} unit(s)</p>
+                            </div>
+                            <div class="detail-item"><label>Booking date</label>
+                                <p>{{ $this->viewedBooking->booking_date->format('l, d M Y') }}</p>
+                            </div>
+                            <div class="detail-item"><label>Time slot</label>
+                                <p>{{ $this->formattedTimeSlot($this->viewedBooking) }}</p>
+                            </div>
+                            <div class="detail-item full"><label>Purpose of booking</label>
+                                <p>{{ $this->viewedBooking->purpose }}</p>
+                            </div>
+                            <div class="detail-item full"><label>Additional notes</label>
+                                <p>{{ $this->viewedBooking->additional_notes ?: 'No additional notes.' }}</p>
+                            </div>
+                            @if ($this->viewedBooking->rejection_reason)
+                                <div class="detail-item full"><label>Reason for rejection</label>
+                                    <p>{{ $this->viewedBooking->rejection_reason }}</p>
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="booking-timeline">
+                            <h3>Booking status</h3>
+                            <div class="timeline-item"><span class="timeline-dot"></span>
+                                <div class="timeline-copy"><strong>Request submitted</strong>
+                                    <p>Booking request submitted</p>
+                                    <small>{{ $this->viewedBooking->created_at->format('d M Y, H:i') }} ·
+                                        {{ auth()->user()->name }}</small>
+                                </div>
+                            </div>
+                            @if ($this->viewedBooking->status !== 'Pending')
+                                <div class="timeline-item"><span class="timeline-dot"></span>
+                                    <div class="timeline-copy"><strong>{{ $this->viewedBooking->status }}</strong>
+                                        <p>Current booking status</p>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     </div>
+                    <div class="modal-footer"><button class="button button-outline" type="button"
+                            wire:click="closeBookingView">Close</button>
+                        @if ($this->isCancellable($this->viewedBooking))
+                            <button class="button button-danger-soft" type="button"
+                                wire:click="openCancelBooking({{ $this->viewedBooking->id }})"><svg class="icon "
+                                    viewBox="0 0 24 24" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="9"></circle>
+                                    <path d="m5.5 5.5 13 13"></path>
+                                </svg> Cancel booking</button>
+                        @endif
+                    </div>
                 </div>
-                <div class="modal-footer"><button class="button button-outline" type="button"
-                        data-close-modal="">Close</button><button class="button button-danger-soft" type="button"
-                        data-action="cancel-booking" data-id="b-003"><svg class="icon " viewBox="0 0 24 24"
-                            aria-hidden="true">
-                            <circle cx="12" cy="12" r="9"></circle>
-                            <path d="m5.5 5.5 13 13"></path>
-                        </svg> Cancel booking</button></div>
             </div>
         </div>
-    </div>
+    @endif
 
 
     {{-- Cancel Booking Modal --}}
-    <div class="modal-backdrop" id="modal-backdrop">
-        <div class="modal modal-small" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-            <div id="modal-content">
-                <div class="modal-header">
-                    <div class="modal-heading"><span class="modal-heading-icon danger"><svg class="icon "
-                                viewBox="0 0 24 24" aria-hidden="true">
-                                <circle cx="12" cy="12" r="9"></circle>
-                                <path d="m5.5 5.5 13 13"></path>
-                            </svg></span>
-                        <div>
-                            <h2 id="modal-title">Cancel this booking?</h2>
-                            <p>Please review this action before continuing.</p>
-                        </div>
-                    </div><button class="icon-button modal-close" type="button" data-close-modal=""
-                        aria-label="Close dialog"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M18 6 6 18M6 6l12 12"></path>
-                        </svg></button>
+    @if ($this->bookingToCancel)
+        <div class="modal-backdrop" id="cancel-booking-backdrop">
+            <div class="modal modal-small" id="cancel-booking-modal" role="dialog" aria-modal="true"
+                aria-labelledby="cancel-booking-title">
+                <div id="cancel-booking-content">
+                    <div class="modal-header">
+                        <div class="modal-heading"><span class="modal-heading-icon danger"><svg class="icon "
+                                    viewBox="0 0 24 24" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="9"></circle>
+                                    <path d="m5.5 5.5 13 13"></path>
+                                </svg></span>
+                            <div>
+                                <h2 id="cancel-booking-title">Cancel this booking?</h2>
+                                <p>Please review this action before continuing.</p>
+                            </div>
+                        </div><button class="icon-button modal-close" type="button" wire:click="closeCancelBooking"
+                            aria-label="Close dialog"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M18 6 6 18M6 6l12 12"></path>
+                            </svg></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="confirm-message"><strong>{{ $this->bookingReference($this->bookingToCancel) }}</strong>
+                            reserves {{ $this->bookingToCancel->quantity }} ×
+                            {{ $this->bookingToCancel->equipment?->name ?? 'Equipment removed' }}
+                            for {{ $this->bookingToCancel->booking_date->format('d M Y') }},
+                            {{ $this->formattedTimeSlot($this->bookingToCancel) }}.
+                            Cancelling immediately releases this equipment for other
+                            students.</div>
+                    </div>
+                    <div class="modal-footer"><button class="button button-outline" type="button"
+                            wire:click="closeCancelBooking">Go
+                            back</button><button class="button button-danger" type="button" wire:click="cancelBooking"
+                            wire:loading.attr="disabled"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M18 6 6 18M6 6l12 12"></path>
+                            </svg> Cancel booking</button></div>
                 </div>
-                <div class="modal-body">
-                    <div class="confirm-message"><strong>AVB-261110-0003</strong> reserves 1 × Portable PA Audio System
-                        for 10 Nov 2026, 1:00 PM – 2:00 PM. Cancelling immediately releases this equipment for other
-                        students.</div>
-                </div>
-                <div class="modal-footer"><button class="button button-outline" type="button" data-close-modal="">Go
-                        back</button><button class="button button-danger" type="button" id="confirm-action"><svg
-                            class="icon " viewBox="0 0 24 24" aria-hidden="true">
-                            <path d="M18 6 6 18M6 6l12 12"></path>
-                        </svg> Cancel booking</button></div>
             </div>
         </div>
-    </div>
+    @endif
 </div>
