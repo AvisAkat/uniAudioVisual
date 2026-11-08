@@ -11,6 +11,7 @@ class StudentController extends Controller
 
         $data = [
             'pageTitle' => 'Dashboard | AVBMS',
+            'appTitle' => 'Dashboard'
         ];
         
         return view('pages.student.dashboard', $data);

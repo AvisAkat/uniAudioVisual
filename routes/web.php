@@ -26,5 +26,10 @@ Route::middleware('auth')->group(function () {
     // Staff Routes
     Route::prefix('staff')->name('staff.')->middleware('staff')->controller(StaffController::class)->group(function () {
         Route::get('/dashboard', 'showDashboard')->name('dashboard');
+        Route::get('/booking-request', 'bookingRequest')->name('booking_request');
+        Route::get('/activity-log', 'activityLog')->name('activity_log');
+        Route::get('/inventory', 'inventory')->name('inventory');
+        Route::get('/usage-history', 'usageHistory')->name('usage_history');
+        Route::get('/time-slot', 'timeSlot')->name('time_slot');
     });
 });
