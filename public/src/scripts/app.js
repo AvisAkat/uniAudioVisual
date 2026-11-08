@@ -122,3 +122,83 @@
         initializeThemeToggle();
     }
 })();
+
+// Sidebar navigation button click handling
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleButton = document.getElementById('sidebar-toggle');
+    const closeButton = document.getElementById('sidebar-mobile-close');
+    const backdrop = document.getElementById('sidebar-backdrop');
+
+    if (!toggleButton) return;
+
+    const isMobile = () => window.innerWidth <= 900;
+
+    // Restore saved desktop sidebar preference.
+    if (!isMobile()) {
+        const savedState = localStorage.getItem('avbms_sidebar');
+
+        document.body.classList.toggle(
+            'sidebar-collapsed',
+            savedState === 'collapsed'
+        );
+    }
+
+    function openMobileSidebar() {
+        document.body.classList.add('mobile-nav-open');
+
+        if (backdrop) {
+            backdrop.hidden = false;
+        }
+
+        toggleButton.setAttribute('aria-expanded', 'true');
+    }
+
+    function closeMobileSidebar() {
+        document.body.classList.remove('mobile-nav-open');
+
+        if (backdrop) {
+            backdrop.hidden = true;
+        }
+
+        toggleButton.setAttribute('aria-expanded', 'false');
+    }
+
+    function toggleSidebar() {
+        if (isMobile()) {
+            if (document.body.classList.contains('mobile-nav-open')) {
+                closeMobileSidebar();
+            } else {
+                openMobileSidebar();
+            }
+
+            return;
+        }
+
+        const collapsed = document.body.classList.toggle(
+            'sidebar-collapsed'
+        );
+
+        localStorage.setItem(
+            'avbms_sidebar',
+            collapsed ? 'collapsed' : 'expanded'
+        );
+
+        toggleButton.setAttribute(
+            'aria-expanded',
+            String(!collapsed)
+        );
+    }
+
+    toggleButton.addEventListener('click', toggleSidebar);
+
+    closeButton?.addEventListener('click', closeMobileSidebar);
+
+    backdrop?.addEventListener('click', closeMobileSidebar);
+
+    // Close mobile sidebar when switching to desktop.
+    window.addEventListener('resize', () => {
+        if (!isMobile()) {
+            closeMobileSidebar();
+        }
+    });
+});
