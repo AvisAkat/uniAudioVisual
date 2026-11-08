@@ -70,8 +70,8 @@ new class extends Component {
   {
     return [
       'slot-1' => '7:30 AM – 10:30 AM',
-      'slot-2' => '11:00 AM – 02:15 PM',
-      'slot-3' => '02:15 PM – 5:15 PM',
+      'slot-2' => '11:00 AM – 2:00 PM',
+      'slot-3' => '2:15 PM – 5:15 PM',
     ];
   }
 
