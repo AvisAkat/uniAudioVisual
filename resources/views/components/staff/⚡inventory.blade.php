@@ -12,6 +12,8 @@ new class extends Component {
 
   public ?int $editingEquipmentId = null;
 
+  public ?int $viewingEquipmentId = null;
+
   public string $name = '';
 
   public string $category = 'Projectors';
@@ -49,6 +51,29 @@ new class extends Component {
     $this->description = $equipment->description ?? '';
     $this->resetValidation();
     $this->showModal = true;
+  }
+
+  public function viewEquipment(int $equipmentId): void
+  {
+    $this->authorizeStaff();
+
+    $equipment = Equipment::query()->findOrFail($equipmentId);
+    $this->viewingEquipmentId = $equipment->id;
+    unset($this->viewedEquipment);
+  }
+
+  #[Computed]
+  public function viewedEquipment(): ?Equipment
+  {
+    return $this->viewingEquipmentId === null
+      ? null
+      : Equipment::query()->find($this->viewingEquipmentId);
+  }
+
+  public function closeEquipmentView(): void
+  {
+    $this->viewingEquipmentId = null;
+    unset($this->viewedEquipment);
   }
 
   public function saveEquipment(): void
@@ -187,15 +212,9 @@ new class extends Component {
         <div class="control-group"><label for="inventory-date">Stock date</label><input id="inventory-date" type="date"
             value="2026-11-08"></div>
         <div class="control-group"><label for="inventory-slot">Stock time</label><select id="inventory-slot">
-            <option value="slot-1">8:00 AM – 9:00 AM</option>
-            <option value="slot-2">9:00 AM – 10:00 AM</option>
-            <option value="slot-3">10:00 AM – 11:00 AM</option>
-            <option value="slot-4">11:00 AM – 12:00 PM</option>
-            <option value="slot-5">12:00 PM – 1:00 PM</option>
-            <option value="slot-6">1:00 PM – 2:00 PM</option>
-            <option value="slot-7" selected="">2:00 PM – 3:00 PM</option>
-            <option value="slot-8">3:00 PM – 4:00 PM</option>
-            <option value="slot-9">4:00 PM – 5:00 PM</option>
+            <option value="slot-1">7:30 AM – 10:30 AM</option>
+            <option value="slot-2">11:00 AM – 02:15 PM</option>
+            <option value="slot-3">02:15 PM – 5:15 PM</option>
           </select></div><button class="button button-outline" type="button"
           data-action="reset-inventory-filters">Reset</button>
       </div>
@@ -245,8 +264,8 @@ new class extends Component {
                   </td>
                   <td data-label="Actions">
                     <div class="table-actions">
-                      <button class="icon-button" type="button" data-action="equipment-availability"
-                        data-id="eq-projector" title="View all slot availability"><svg class="icon " viewBox="0 0 24 24"
+                      <button class="icon-button" type="button" wire:click="viewEquipment({{ $equipment->id }})"
+                        title="View equipment availability"><svg class="icon " viewBox="0 0 24 24"
                           aria-hidden="true">
                           <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
                           <circle cx="12" cy="12" r="3"></circle>
@@ -341,108 +360,77 @@ new class extends Component {
     </div>
   @endif
 
-  {{-- View Equipment modal --}}
-  <div class="modal-backdrop" id="modal-backdrop">
-    <div class="modal modal-large" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div id="modal-content">
+  @if ($viewingEquipmentId !== null && $this->viewedEquipment)
+    {{-- View Equipment modal --}}
+    <div class="modal-backdrop" id="equipment-view-backdrop">
+      <div class="modal modal-large" id="equipment-view-modal" role="dialog" aria-modal="true"
+        aria-labelledby="equipment-view-title">
         <div class="modal-header">
-          <div class="modal-heading"><span class="modal-heading-icon "><svg class="icon " viewBox="0 0 24 24"
-                aria-hidden="true">
+          <div class="modal-heading">
+            <span class="modal-heading-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
                 <circle cx="12" cy="12" r="9"></circle>
                 <path d="M12 7v5l3 2"></path>
               </svg></span>
             <div>
-              <h2 id="modal-title">Equipment availability</h2>
-              <p>Epson EB-2265U Projector · 8 Nov 2026</p>
+              <h2 id="equipment-view-title">Equipment availability</h2>
+              <p>{{ $this->viewedEquipment->name }} · {{ $this->viewedEquipment->asset_code }}</p>
             </div>
-          </div><button class="icon-button modal-close" type="button" data-close-modal="" aria-label="Close dialog"><svg
-              class="icon " viewBox="0 0 24 24" aria-hidden="true">
+          </div>
+          <button class="icon-button modal-close" type="button" wire:click="closeEquipmentView"
+            aria-label="Close dialog">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M18 6 6 18M6 6l12 12"></path>
-            </svg></button>
+            </svg>
+          </button>
         </div>
         <div class="modal-body">
           <div class="availability-panel">
-            <div><small>Total inventory</small><strong>5</strong></div>
-            <div><small>Condition</small><strong style="font-size:13px">Good</strong></div>
-            <div><small>Selected date</small><strong style="font-size:13px">8 Nov</strong></div>
+            <div><small>Total inventory</small><strong>{{ $this->viewedEquipment->total_quantity }}</strong></div>
+            <div><small>Available units</small><strong>{{ $this->viewedEquipment->available_quantity }}</strong></div>
+            <div><small>Condition</small><strong>{{ $this->viewedEquipment->condition }}</strong></div>
           </div>
           <div class="table-wrap">
             <table class="data-table responsive-table">
               <thead>
                 <tr>
                   <th>Time slot</th>
-                  <th>Reserved</th>
-                  <th>Available</th>
+                  <th>Available units</th>
                   <th>Status</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td data-label="Time slot"><span class="cell-primary">8:00 AM – 9:00 AM</span></td>
-                  <td data-label="Reserved">0</td>
-                  <td data-label="Available"><strong class="text-success">5</strong></td>
-                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
-                </tr>
-                <tr>
-                  <td data-label="Time slot"><span class="cell-primary">9:00 AM – 10:00 AM</span></td>
-                  <td data-label="Reserved">0</td>
-                  <td data-label="Available"><strong class="text-success">5</strong></td>
-                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
-                </tr>
-                <tr>
-                  <td data-label="Time slot"><span class="cell-primary">10:00 AM – 11:00 AM</span></td>
-                  <td data-label="Reserved">0</td>
-                  <td data-label="Available"><strong class="text-success">5</strong></td>
-                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
-                </tr>
-                <tr>
-                  <td data-label="Time slot"><span class="cell-primary">11:00 AM – 12:00 PM</span></td>
-                  <td data-label="Reserved">0</td>
-                  <td data-label="Available"><strong class="text-success">5</strong></td>
-                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
-                </tr>
-                <tr>
-                  <td data-label="Time slot"><span class="cell-primary">12:00 PM – 1:00 PM</span></td>
-                  <td data-label="Reserved">0</td>
-                  <td data-label="Available"><strong class="text-success">5</strong></td>
-                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
-                </tr>
-                <tr>
-                  <td data-label="Time slot"><span class="cell-primary">1:00 PM – 2:00 PM</span></td>
-                  <td data-label="Reserved">0</td>
-                  <td data-label="Available"><strong class="text-success">5</strong></td>
-                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
-                </tr>
-                <tr>
-                  <td data-label="Time slot"><span class="cell-primary">2:00 PM – 3:00 PM</span></td>
-                  <td data-label="Reserved">0</td>
-                  <td data-label="Available"><strong class="text-success">5</strong></td>
-                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
-                </tr>
-                <tr>
-                  <td data-label="Time slot"><span class="cell-primary">3:00 PM – 4:00 PM</span></td>
-                  <td data-label="Reserved">0</td>
-                  <td data-label="Available"><strong class="text-success">5</strong></td>
-                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
-                </tr>
-                <tr>
-                  <td data-label="Time slot"><span class="cell-primary">4:00 PM – 5:00 PM</span></td>
-                  <td data-label="Reserved">0</td>
-                  <td data-label="Available"><strong class="text-success">5</strong></td>
-                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
-                </tr>
+                @foreach (['7:30 AM – 10:30 AM', '11:30 AM – 2:00 PM', '2:15 PM – 5:15 PM'] as $timeSlot)
+                  <tr wire:key="availability-slot-{{ $loop->index }}">
+                    <td data-label="Time slot"><span class="cell-primary">{{ $timeSlot }}</span></td>
+                    <td data-label="Available units">
+                      <strong class="{{ $this->viewedEquipment->available_quantity > 0 ? 'text-success' : '' }}">
+                        {{ $this->viewedEquipment->available_quantity }}
+                      </strong>
+                    </td>
+                    <td data-label="Status">
+                      @if ($this->viewedEquipment->condition === 'Good' && $this->viewedEquipment->available_quantity > 0)
+                        <span class="status-badge status-available">Available</span>
+                      @else
+                        <span class="status-badge status-unavailable">Not bookable</span>
+                      @endif
+                    </td>
+                  </tr>
+                @endforeach
               </tbody>
             </table>
           </div>
-          <div class="form-note" style="margin-top:15px"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
+          <div class="form-note" style="margin-top:15px">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="12" cy="12" r="9"></circle>
               <path d="M12 11v6M12 7h.01"></path>
-            </svg><span>Availability = total inventory minus pending and approved reservations in each individual slot.
-              Maintenance or damaged stock is not bookable.</span></div>
+            </svg>
+            <span>Availability reflects current inventory. Reservations are not yet tracked by time slot.</span>
+          </div>
         </div>
-        <div class="modal-footer"><button class="button button-primary" type="button" data-close-modal="">Done</button>
+        <div class="modal-footer">
+          <button class="button button-primary" type="button" wire:click="closeEquipmentView">Done</button>
         </div>
       </div>
     </div>
-  </div>
+  @endif
 </div>

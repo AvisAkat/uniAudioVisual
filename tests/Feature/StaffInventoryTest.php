@@ -109,3 +109,31 @@ it('forbids students from opening the equipment form', function () {
         ->call('openCreateModal')
         ->assertForbidden();
 });
+
+it('shows the selected equipment in the three-slot availability modal', function () {
+    $staff = User::factory()->create([
+        'role' => 'staff',
+        'university_id' => fake()->unique()->numerify('STAFF-####'),
+    ]);
+    $equipment = Equipment::query()->create([
+        'name' => 'Lecture Projector',
+        'asset_code' => 'EQ-LECTURE01',
+        'category' => 'Projectors',
+        'description' => 'Projector for lecture rooms.',
+        'total_quantity' => 5,
+        'available_quantity' => 3,
+        'condition' => 'Good',
+        'status' => 'Available',
+    ]);
+
+    $this->actingAs($staff);
+
+    Livewire::test('staff.inventory')
+        ->call('viewEquipment', $equipment->id)
+        ->assertSet('viewingEquipmentId', $equipment->id)
+        ->assertSee('Lecture Projector')
+        ->assertSee('7:30 AM – 10:30 AM')
+        ->assertSee('11:30 AM – 2:00 PM')
+        ->assertSee('2:15 PM – 5:15 PM')
+        ->assertSee('3');
+});
