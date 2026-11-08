@@ -21,6 +21,9 @@ Route::middleware('auth')->group(function () {
     // Student Routes
     Route::prefix('student')->name('student.')->middleware('student')->controller(StudentController::class)->group(function () {
         Route::get('/dashboard', 'showDashboard')->name('dashboard');
+        Route::get('/browse-equipment', 'equipments')->name('browse_equipment');
+        Route::get('/check-availability', 'equipmentAvailability')->name('check_availability');
+        Route::get('/my-bookings', 'myBookings')->name('my_bookings');
     });
 
     // Staff Routes
