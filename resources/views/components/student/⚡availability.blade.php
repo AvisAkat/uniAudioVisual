@@ -453,7 +453,7 @@ new class extends Component {
             @if ($this->selectedEquipment)
                 <div class="section-heading">
                     <div>
-                        <h2>{{ \Illuminate\Support\Carbon::parse($availabilityDate)->format('l, j M Y') }}</h2>
+                        <h2>{{ Carbon::parse($availabilityDate)->format('l, j M Y') }}</h2>
                         <p>{{ $this->selectedEquipment->name }} · {{ $this->selectedEquipment->total_quantity }} total units · {{ $this->selectedEquipment->condition }}</p>
                     </div>
                 </div>
@@ -559,7 +559,7 @@ new class extends Component {
                         </div>
                         <div class="availability-message">
                             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="m8 12 3 3 5-6"></path></svg>
-                            <span>{{ $bookingStock['available'] }} unit(s) available on {{ \Illuminate\Support\Carbon::parse($availabilityDate)->format('j M Y') }} during {{ $selectedSlot['label'] }}.</span>
+                            <span>{{ $bookingStock['available'] }} unit(s) available on {{ Carbon::parse($availabilityDate)->format('j M Y') }} during {{ $selectedSlot['label'] }}.</span>
                         </div>
                         <div class="field-group">
                             <label for="booking-quantity">Quantity required <span class="required">*</span></label>
