@@ -37,42 +37,6 @@
         );
     }
 
-    // Livewire request starts
-    document.addEventListener("livewire:init", () => {
-        Livewire.hook("request", ({ succeed, fail }) => {
-            livewireRequests++;
-
-            showLoader();
-
-            const finishRequest = () => {
-                livewireRequests = Math.max(0, livewireRequests - 1);
-
-                if (livewireRequests === 0) {
-                    hideLoader();
-                }
-            };
-
-            succeed(() => {
-                finishRequest();
-            });
-
-            fail(() => {
-                finishRequest();
-            });
-        });
-
-        // Livewire navigation starts
-        document.addEventListener("livewire:navigate", () => {
-            navigationActive = true;
-            showLoader();
-        });
-
-        // Livewire navigation finishes
-        document.addEventListener("livewire:navigated", () => {
-            navigationActive = false;
-            hideLoader();
-        });
-    });
 })();
 
 

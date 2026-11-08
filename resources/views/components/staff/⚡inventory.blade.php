@@ -9,11 +9,17 @@ use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 
 new class extends Component {
+  const loaderActions = [
+    "saveEquipment",
+  ];
+
   public bool $showModal = false;
 
   public ?int $editingEquipmentId = null;
 
   public ?int $viewingEquipmentId = null;
+
+  public ?int $deletingEquipmentId = null;
 
   public string $name = '';
 
@@ -45,7 +51,7 @@ new class extends Component {
   {
     return Equipment::query()
       ->when($this->search !== '', function (Builder $query): void {
-        $searchTerm = '%'.$this->search.'%';
+        $searchTerm = '%' . $this->search . '%';
 
         $query->where(function (Builder $query) use ($searchTerm): void {
           $query->where('name', 'like', $searchTerm)
@@ -53,8 +59,8 @@ new class extends Component {
             ->orWhere('asset_code', 'like', $searchTerm);
         });
       })
-      ->when($this->categoryFilter !== 'All', fn (Builder $query) => $query->where('category', $this->categoryFilter))
-      ->when($this->conditionFilter !== 'All', fn (Builder $query) => $query->where('condition', $this->conditionFilter))
+      ->when($this->categoryFilter !== 'All', fn(Builder $query) => $query->where('category', $this->categoryFilter))
+      ->when($this->conditionFilter !== 'All', fn(Builder $query) => $query->where('condition', $this->conditionFilter))
       ->orderBy('name')
       ->get();
   }
@@ -127,6 +133,68 @@ new class extends Component {
   {
     $this->viewingEquipmentId = null;
     unset($this->viewedEquipment);
+  }
+
+  public function openDeleteEquipment(int $equipmentId): void
+  {
+    $this->authorizeStaff();
+
+    Equipment::query()->findOrFail($equipmentId);
+
+    $this->deletingEquipmentId = $equipmentId;
+    unset($this->equipmentToDelete);
+  }
+
+  #[Computed]
+  public function equipmentToDelete(): ?Equipment
+  {
+    return $this->deletingEquipmentId === null
+      ? null
+      : Equipment::query()->find($this->deletingEquipmentId);
+  }
+
+  public function closeDeleteModal(): void
+  {
+    $this->deletingEquipmentId = null;
+    unset($this->equipmentToDelete);
+  }
+
+  public function deleteEquipment(): void
+  {
+    $this->authorizeStaff();
+
+    $equipment = $this->equipmentToDelete;
+
+    if ($equipment === null) {
+      $this->closeDeleteModal();
+
+      return;
+    }
+
+    $equipmentName = $equipment->name;
+
+    $deleted = $equipment->delete();
+
+    if (!$deleted) {
+      $this->dispatch(
+        'toast',
+        title: 'Something went wrong',
+        message: 'Unable to remove the equipment item. Please try again later.',
+        type: 'error'
+      );
+
+      return;
+    }
+
+    $this->closeDeleteModal();
+    unset($this->equipmentItems);
+
+    $this->dispatch(
+      'toast',
+      title: 'Equipment removed',
+      message: "$equipmentName has been removed from the inventory.",
+      type: 'success'
+    );
   }
 
   public function saveEquipment(): void
@@ -249,14 +317,16 @@ new class extends Component {
               <path d="m20 20-4-4"></path>
             </svg></span><input id="inventory-search" type="search" value="" placeholder="Search equipment inventory"
             aria-label="Search inventory" wire:model.live.debounce.300ms="search"></div>
-          <div class="control-group"><label for="inventory-category">Category</label><select id="inventory-category" wire:model.live="categoryFilter">
+        <div class="control-group"><label for="inventory-category">Category</label><select id="inventory-category"
+            wire:model.live="categoryFilter">
             <option value="All">All categories</option>
             <option value="Projectors">Projectors</option>
             <option value="HDMI Cables">HDMI Cables</option>
             <option value="Extension Boards">Extension Boards</option>
             <option value="Audio Systems">Audio Systems</option>
           </select></div>
-        <div class="control-group"><label for="inventory-condition">Condition</label><select id="inventory-condition" wire:model.live="conditionFilter">
+        <div class="control-group"><label for="inventory-condition">Condition</label><select id="inventory-condition"
+            wire:model.live="conditionFilter">
             <option value="All">All conditions</option>
             <option>Good</option>
             <option>Under Maintenance</option>
@@ -264,12 +334,12 @@ new class extends Component {
           </select></div>
         <div class="control-group"><label for="inventory-date">Stock date</label><input id="inventory-date" type="date"
             wire:model.live="stockDate"></div>
-        <div class="control-group"><label for="inventory-slot">Stock time</label><select id="inventory-slot" wire:model.live="stockSlot">
+        <div class="control-group"><label for="inventory-slot">Stock time</label><select id="inventory-slot"
+            wire:model.live="stockSlot">
             @foreach ($this->stockSlots as $slotValue => $slotLabel)
               <option value="{{ $slotValue }}">{{ $slotLabel }}</option>
             @endforeach
-          </select></div><button class="button button-outline" type="button"
-          wire:click="resetFilters">Reset</button>
+          </select></div><button class="button button-outline" type="button" wire:click="resetFilters">Reset</button>
       </div>
       <div class="results-meta"><span>{{ $this->equipmentItems->count() }} equipment type(s) ·
           {{ $this->equipmentItems->sum('total_quantity') }} total units</span><span>Reserved = total quantity minus
@@ -318,8 +388,7 @@ new class extends Component {
                   <td data-label="Actions">
                     <div class="table-actions">
                       <button class="icon-button" type="button" wire:click="viewEquipment({{ $equipment->id }})"
-                        title="View equipment availability"><svg class="icon " viewBox="0 0 24 24"
-                          aria-hidden="true">
+                        title="View equipment availability"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
                           <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
                           <circle cx="12" cy="12" r="3"></circle>
                         </svg>
@@ -330,6 +399,11 @@ new class extends Component {
                           <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
                         </svg>
                       </button>
+                      <button class="icon-button action-delete" type="button" wire:click="openDeleteEquipment({{ $equipment->id }})"
+                        data-action="delete-equipment" data-id="{{ $equipment->id }}" title="Remove equipment"><svg class="icon "
+                          viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M3 6h18M8 6V3h8v3M19 6l-1 15H6L5 6M10 11v5M14 11v5"></path>
+                        </svg></button>
                     </div>
                   </td>
                 </tr>
@@ -429,8 +503,7 @@ new class extends Component {
               <p>{{ $this->viewedEquipment->name }} · {{ $this->viewedEquipment->asset_code }}</p>
             </div>
           </div>
-          <button class="icon-button modal-close" type="button" wire:click="closeEquipmentView"
-            aria-label="Close dialog">
+          <button class="icon-button modal-close" type="button" wire:click="closeEquipmentView" aria-label="Close dialog">
             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
               <path d="M18 6 6 18M6 6l12 12"></path>
             </svg>
@@ -482,6 +555,40 @@ new class extends Component {
         </div>
         <div class="modal-footer">
           <button class="button button-primary" type="button" wire:click="closeEquipmentView">Done</button>
+        </div>
+      </div>
+    </div>
+  @endif
+
+  {{-- Delete equipment modal --}}
+  @if ($deletingEquipmentId !== null && $this->equipmentToDelete)
+    <div class="modal-backdrop" id="modal-backdrop">
+      <div class="modal modal-small" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div id="modal-content">
+          <div class="modal-header">
+            <div class="modal-heading"><span class="modal-heading-icon danger"><svg class="icon " viewBox="0 0 24 24"
+                  aria-hidden="true">
+                  <path d="M3 6h18M8 6V3h8v3M19 6l-1 15H6L5 6M10 11v5M14 11v5"></path>
+                </svg></span>
+              <div>
+                <h2 id="modal-title">Remove equipment from inventory?</h2>
+                <p>Please review this action before continuing.</p>
+              </div>
+            </div><button class="icon-button modal-close" type="button" wire:click="closeDeleteModal" aria-label="Close dialog"><svg
+                class="icon " viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12"></path>
+              </svg></button>
+          </div>
+          <div class="modal-body">
+            <div class="confirm-message">Remove <strong>{{ $this->equipmentToDelete->name }}</strong> and its {{ $this->equipmentToDelete->total_quantity }} unit(s)? Historical
+              booking and usage records will retain the equipment name, but students will no longer see it in the
+              catalogue.</div>
+          </div>
+          <div class="modal-footer"><button class="button button-outline" type="button" wire:click="closeDeleteModal">Go
+              back</button><button class="button button-danger" type="button" wire:click="deleteEquipment" id="confirm-action"><svg class="icon "
+                viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12"></path>
+              </svg> Remove equipment</button></div>
         </div>
       </div>
     </div>
