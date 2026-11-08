@@ -407,7 +407,7 @@ new class extends Component {
                     type="button"
                     wire:click="moveWeek(-1)"
                     aria-label="Previous week"
-                    @disabled($this->weekDates[0]->lte(now()->startOfWeek(\Illuminate\Support\Carbon::MONDAY)))
+                    @disabled($this->weekDates[0]->lte(now()->startOfWeek(Carbon::MONDAY)))
                 >
                     <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"></path></svg>
                 </button>
