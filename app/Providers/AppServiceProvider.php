@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\View\View;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,6 +25,17 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureDefaults();
+
+        view()->composer('layouts.pages-layout', function (View $view): void {
+            $user = auth()->user();
+
+            $view->with(
+                'pendingBookingCount',
+                $user?->role === 'student'
+                    ? $user->bookings()->where('status', 'Pending')->count()
+                    : 0
+            );
+        });
     }
 
     /**

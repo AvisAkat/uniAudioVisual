@@ -108,7 +108,7 @@
                                     </svg>
                                 </span>
                                 <span class="nav-label">My Bookings</span>
-                                <span class="nav-count" id="student-booking-count">2</span>
+                                <span class="nav-count" id="student-booking-count">{{ $pendingBookingCount }}</span>
                             </button>
                         </a>
                     </div>
