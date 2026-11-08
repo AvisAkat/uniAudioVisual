@@ -2,39 +2,280 @@
 
 use Livewire\Component;
 
-new class extends Component
-{
-    //
+new class extends Component {
+  //
 };
 ?>
 
 <div>
-    <section class="app-view is-entering" id="view-inventory" aria-label="Inventory management"><div id="inventory-content">
-    <div class="section-heading"><div><h2>Equipment inventory</h2><p>Stock figures below are calculated for <strong>8 Nov 2026</strong>, <strong>2:00 PM – 3:00 PM</strong>.</p></div><div class="section-actions"><button class="button button-primary" type="button" data-action="add-equipment"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg> Add equipment</button></div></div>
-    <div class="alert"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7h.01"></path></svg><div><strong>Reservation-safe stock controls</strong><p>Quantity cannot be reduced below the highest active reservation in any single slot. Maintenance and damaged conditions prevent new bookings.</p></div></div>
-    <div class="filter-bar"><div class="search-control"><span><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg></span><input id="inventory-search" type="search" value="" placeholder="Search equipment inventory" aria-label="Search inventory"></div><div class="control-group"><label for="inventory-category">Category</label><select id="inventory-category"><option value="All">All categories</option><option value="Projectors">Projectors</option><option value="HDMI Cables">HDMI Cables</option><option value="Extension Boards">Extension Boards</option><option value="Audio Systems">Audio Systems</option></select></div><div class="control-group"><label for="inventory-condition">Condition</label><select id="inventory-condition"><option value="All">All conditions</option><option>Good</option><option>Under Maintenance</option><option>Damaged</option></select></div><div class="control-group"><label for="inventory-date">Stock date</label><input id="inventory-date" type="date" value="2026-11-08"></div><div class="control-group"><label for="inventory-slot">Stock time</label><select id="inventory-slot"><option value="slot-1">8:00 AM – 9:00 AM</option><option value="slot-2">9:00 AM – 10:00 AM</option><option value="slot-3">10:00 AM – 11:00 AM</option><option value="slot-4">11:00 AM – 12:00 PM</option><option value="slot-5">12:00 PM – 1:00 PM</option><option value="slot-6">1:00 PM – 2:00 PM</option><option value="slot-7" selected="">2:00 PM – 3:00 PM</option><option value="slot-8">3:00 PM – 4:00 PM</option><option value="slot-9">4:00 PM – 5:00 PM</option></select></div><button class="button button-outline" type="button" data-action="reset-inventory-filters">Reset</button></div>
-    <div class="results-meta"><span>4 equipment type(s) · 31 total units shown</span><span>Reserved = Pending + Approved for selected slot</span></div>
-    <div class="table-card"><div class="table-wrap"><table class="data-table responsive-table"><thead><tr><th>Equipment Name</th><th>Category</th><th>Total Quantity</th><th>Currently Reserved</th><th>Available Quantity</th><th>Condition</th><th>Actions</th></tr></thead><tbody><tr><td data-label="Equipment"><div class="inventory-name"><span class="inventory-icon"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="11" rx="2"></rect><circle cx="15" cy="12.5" r="2.5"></circle><path d="M7 11h3M7 14h2M6 18v2M18 18v2M6 7V5h5v2"></path></svg></span><span><span class="cell-primary">Epson EB-2265U Projector</span><span class="cell-secondary truncate">Bright 5,500-lumen projector with wireless display and HDMI connectivity for lectures and presentations.</span></span></div></td><td data-label="Category"><span class="category-badge">Projectors</span></td><td data-label="Total quantity"><strong>5</strong> units</td><td data-label="Currently reserved"><strong class="">0</strong> units</td><td data-label="Available"><strong class="text-success">5</strong> units</td><td data-label="Condition"><span class="condition-badge status-good">Good</span></td><td data-label="Actions"><div class="table-actions"><button class="icon-button" type="button" data-action="equipment-availability" data-id="eq-projector" title="View all slot availability"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg></button><button class="icon-button" type="button" data-action="edit-equipment" data-id="eq-projector" title="Edit equipment"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path></svg></button><button class="icon-button action-delete" type="button" data-action="delete-equipment" data-id="eq-projector" title="Remove equipment"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V3h8v3M19 6l-1 15H6L5 6M10 11v5M14 11v5"></path></svg></button></div></td></tr><tr><td data-label="Equipment"><div class="inventory-name"><span class="inventory-icon"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3v5M5 3v5M4 8h5v3a3 3 0 0 1-3 3H5a3 3 0 0 0-3 3v4M16 21v-5M19 21v-5M15 16h5v-3a3 3 0 0 1 3-3h0a3 3 0 0 0 3-3V3" transform="translate(-2 0) scale(.95)"></path></svg></span><span><span class="cell-primary">High-Speed HDMI Cable (3m)</span><span class="cell-secondary truncate">Durable HDMI 2.0 cable supporting 4K video and audio between laptops, projectors and displays.</span></span></div></td><td data-label="Category"><span class="category-badge">HDMI Cables</span></td><td data-label="Total quantity"><strong>15</strong> units</td><td data-label="Currently reserved"><strong class="">0</strong> units</td><td data-label="Available"><strong class="text-success">15</strong> units</td><td data-label="Condition"><span class="condition-badge status-good">Good</span></td><td data-label="Actions"><div class="table-actions"><button class="icon-button" type="button" data-action="equipment-availability" data-id="eq-hdmi" title="View all slot availability"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg></button><button class="icon-button" type="button" data-action="edit-equipment" data-id="eq-hdmi" title="Edit equipment"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path></svg></button><button class="icon-button action-delete" type="button" data-action="delete-equipment" data-id="eq-hdmi" title="Remove equipment"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V3h8v3M19 6l-1 15H6L5 6M10 11v5M14 11v5"></path></svg></button></div></td></tr><tr><td data-label="Equipment"><div class="inventory-name"><span class="inventory-icon"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="8" width="20" height="8" rx="2"></rect><path d="M6 11v2M10 11v2M14 11v2M18 11v2M12 8V5a3 3 0 0 1 3-3h2"></path></svg></span><span><span class="cell-primary">8-Way Surge Extension Board</span><span class="cell-secondary truncate">Surge-protected eight-way power board with a 5-metre lead for classroom and event setups.</span></span></div></td><td data-label="Category"><span class="category-badge">Extension Boards</span></td><td data-label="Total quantity"><strong>8</strong> units</td><td data-label="Currently reserved"><strong class="">0</strong> units</td><td data-label="Available"><strong class="text-success">8</strong> units</td><td data-label="Condition"><span class="condition-badge status-good">Good</span></td><td data-label="Actions"><div class="table-actions"><button class="icon-button" type="button" data-action="equipment-availability" data-id="eq-extension" title="View all slot availability"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg></button><button class="icon-button" type="button" data-action="edit-equipment" data-id="eq-extension" title="Edit equipment"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path></svg></button><button class="icon-button action-delete" type="button" data-action="delete-equipment" data-id="eq-extension" title="Remove equipment"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V3h8v3M19 6l-1 15H6L5 6M10 11v5M14 11v5"></path></svg></button></div></td></tr><tr><td data-label="Equipment"><div class="inventory-name"><span class="inventory-icon"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="3"></rect><circle cx="12" cy="15" r="4"></circle><circle cx="12" cy="7" r="2"></circle><path d="M9 22h6"></path></svg></span><span><span class="cell-primary">Portable PA Audio System</span><span class="cell-secondary truncate">Rechargeable PA speaker with wireless microphone, Bluetooth input and adjustable tripod stand.</span></span></div></td><td data-label="Category"><span class="category-badge">Audio Systems</span></td><td data-label="Total quantity"><strong>3</strong> units</td><td data-label="Currently reserved"><strong class="">0</strong> units</td><td data-label="Available"><strong class="text-success">3</strong> units</td><td data-label="Condition"><span class="condition-badge status-good">Good</span></td><td data-label="Actions"><div class="table-actions"><button class="icon-button" type="button" data-action="equipment-availability" data-id="eq-audio" title="View all slot availability"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle></svg></button><button class="icon-button" type="button" data-action="edit-equipment" data-id="eq-audio" title="Edit equipment"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path></svg></button><button class="icon-button action-delete" type="button" data-action="delete-equipment" data-id="eq-audio" title="Remove equipment"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V3h8v3M19 6l-1 15H6L5 6M10 11v5M14 11v5"></path></svg></button></div></td></tr></tbody></table></div></div></div></section>
+  <section class="app-view is-entering" id="view-inventory" aria-label="Inventory management">
+    <div id="inventory-content">
+      <div class="section-heading">
+        <div>
+          <h2>Equipment inventory</h2>
+          <p>Stock figures below are calculated for <strong>8 Nov 2026</strong>, <strong>2:00 PM – 3:00 PM</strong>.</p>
+        </div>
+        <div class="section-actions"><button class="button button-primary" type="button"
+            data-action="add-equipment"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 5v14M5 12h14"></path>
+            </svg> Add equipment</button></div>
+      </div>
+      <div class="alert"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M12 11v6M12 7h.01"></path>
+        </svg>
+        <div><strong>Reservation-safe stock controls</strong>
+          <p>Quantity cannot be reduced below the highest active reservation in any single slot. Maintenance and damaged
+            conditions prevent new bookings.</p>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <div class="search-control"><span><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m20 20-4-4"></path>
+            </svg></span><input id="inventory-search" type="search" value="" placeholder="Search equipment inventory"
+            aria-label="Search inventory"></div>
+        <div class="control-group"><label for="inventory-category">Category</label><select id="inventory-category">
+            <option value="All">All categories</option>
+            <option value="Projectors">Projectors</option>
+            <option value="HDMI Cables">HDMI Cables</option>
+            <option value="Extension Boards">Extension Boards</option>
+            <option value="Audio Systems">Audio Systems</option>
+          </select></div>
+        <div class="control-group"><label for="inventory-condition">Condition</label><select id="inventory-condition">
+            <option value="All">All conditions</option>
+            <option>Good</option>
+            <option>Under Maintenance</option>
+            <option>Damaged</option>
+          </select></div>
+        <div class="control-group"><label for="inventory-date">Stock date</label><input id="inventory-date" type="date"
+            value="2026-11-08"></div>
+        <div class="control-group"><label for="inventory-slot">Stock time</label><select id="inventory-slot">
+            <option value="slot-1">8:00 AM – 9:00 AM</option>
+            <option value="slot-2">9:00 AM – 10:00 AM</option>
+            <option value="slot-3">10:00 AM – 11:00 AM</option>
+            <option value="slot-4">11:00 AM – 12:00 PM</option>
+            <option value="slot-5">12:00 PM – 1:00 PM</option>
+            <option value="slot-6">1:00 PM – 2:00 PM</option>
+            <option value="slot-7" selected="">2:00 PM – 3:00 PM</option>
+            <option value="slot-8">3:00 PM – 4:00 PM</option>
+            <option value="slot-9">4:00 PM – 5:00 PM</option>
+          </select></div><button class="button button-outline" type="button"
+          data-action="reset-inventory-filters">Reset</button>
+      </div>
+      <div class="results-meta"><span>4 equipment type(s) · 31 total units shown</span><span>Reserved = Pending +
+          Approved for selected slot</span></div>
+      <div class="table-card">
+        <div class="table-wrap">
+          <table class="data-table responsive-table">
+            <thead>
+              <tr>
+                <th>Equipment Name</th>
+                <th>Category</th>
+                <th>Total Quantity</th>
+                <th>Currently Reserved</th>
+                <th>Available Quantity</th>
+                <th>Condition</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td data-label="Equipment">
+                  <div class="inventory-name"><span class="inventory-icon"><svg class="icon " viewBox="0 0 24 24"
+                        aria-hidden="true">
+                        <rect x="3" y="7" width="18" height="11" rx="2"></rect>
+                        <circle cx="15" cy="12.5" r="2.5"></circle>
+                        <path d="M7 11h3M7 14h2M6 18v2M18 18v2M6 7V5h5v2"></path>
+                      </svg></span><span><span class="cell-primary">Epson EB-2265U Projector</span><span
+                        class="cell-secondary truncate">Bright 5,500-lumen projector with wireless display and HDMI
+                        connectivity for lectures and presentations.</span></span></div>
+                </td>
+                <td data-label="Category"><span class="category-badge">Projectors</span></td>
+                <td data-label="Total quantity"><strong>5</strong> units</td>
+                <td data-label="Currently reserved"><strong class="">0</strong> units</td>
+                <td data-label="Available"><strong class="text-success">5</strong> units</td>
+                <td data-label="Condition"><span class="condition-badge status-good">Good</span></td>
+                <td data-label="Actions">
+                  <div class="table-actions"><button class="icon-button" type="button"
+                      data-action="equipment-availability" data-id="eq-projector"
+                      title="View all slot availability"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg></button><button class="icon-button" type="button" data-action="edit-equipment"
+                      data-id="eq-projector" title="Edit equipment"><svg class="icon " viewBox="0 0 24 24"
+                        aria-hidden="true">
+                        <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
+                      </svg></button><button class="icon-button action-delete" type="button"
+                      data-action="delete-equipment" data-id="eq-projector" title="Remove equipment"><svg class="icon "
+                        viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 6h18M8 6V3h8v3M19 6l-1 15H6L5 6M10 11v5M14 11v5"></path>
+                      </svg></button></div>
+                </td>
+              </tr>
+              <tr>
+                <td data-label="Equipment">
+                  <div class="inventory-name"><span class="inventory-icon"><svg class="icon " viewBox="0 0 24 24"
+                        aria-hidden="true">
+                        <path
+                          d="M8 3v5M5 3v5M4 8h5v3a3 3 0 0 1-3 3H5a3 3 0 0 0-3 3v4M16 21v-5M19 21v-5M15 16h5v-3a3 3 0 0 1 3-3h0a3 3 0 0 0 3-3V3"
+                          transform="translate(-2 0) scale(.95)"></path>
+                      </svg></span><span><span class="cell-primary">High-Speed HDMI Cable (3m)</span><span
+                        class="cell-secondary truncate">Durable HDMI 2.0 cable supporting 4K video and audio between
+                        laptops, projectors and displays.</span></span></div>
+                </td>
+                <td data-label="Category"><span class="category-badge">HDMI Cables</span></td>
+                <td data-label="Total quantity"><strong>15</strong> units</td>
+                <td data-label="Currently reserved"><strong class="">0</strong> units</td>
+                <td data-label="Available"><strong class="text-success">15</strong> units</td>
+                <td data-label="Condition"><span class="condition-badge status-good">Good</span></td>
+                <td data-label="Actions">
+                  <div class="table-actions"><button class="icon-button" type="button"
+                      data-action="equipment-availability" data-id="eq-hdmi" title="View all slot availability"><svg
+                        class="icon " viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg></button><button class="icon-button" type="button" data-action="edit-equipment"
+                      data-id="eq-hdmi" title="Edit equipment"><svg class="icon " viewBox="0 0 24 24"
+                        aria-hidden="true">
+                        <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
+                      </svg></button><button class="icon-button action-delete" type="button"
+                      data-action="delete-equipment" data-id="eq-hdmi" title="Remove equipment"><svg class="icon "
+                        viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 6h18M8 6V3h8v3M19 6l-1 15H6L5 6M10 11v5M14 11v5"></path>
+                      </svg></button></div>
+                </td>
+              </tr>
+              <tr>
+                <td data-label="Equipment">
+                  <div class="inventory-name"><span class="inventory-icon"><svg class="icon " viewBox="0 0 24 24"
+                        aria-hidden="true">
+                        <rect x="2" y="8" width="20" height="8" rx="2"></rect>
+                        <path d="M6 11v2M10 11v2M14 11v2M18 11v2M12 8V5a3 3 0 0 1 3-3h2"></path>
+                      </svg></span><span><span class="cell-primary">8-Way Surge Extension Board</span><span
+                        class="cell-secondary truncate">Surge-protected eight-way power board with a 5-metre lead for
+                        classroom and event setups.</span></span></div>
+                </td>
+                <td data-label="Category"><span class="category-badge">Extension Boards</span></td>
+                <td data-label="Total quantity"><strong>8</strong> units</td>
+                <td data-label="Currently reserved"><strong class="">0</strong> units</td>
+                <td data-label="Available"><strong class="text-success">8</strong> units</td>
+                <td data-label="Condition"><span class="condition-badge status-good">Good</span></td>
+                <td data-label="Actions">
+                  <div class="table-actions"><button class="icon-button" type="button"
+                      data-action="equipment-availability" data-id="eq-extension"
+                      title="View all slot availability"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg></button><button class="icon-button" type="button" data-action="edit-equipment"
+                      data-id="eq-extension" title="Edit equipment"><svg class="icon " viewBox="0 0 24 24"
+                        aria-hidden="true">
+                        <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
+                      </svg></button><button class="icon-button action-delete" type="button"
+                      data-action="delete-equipment" data-id="eq-extension" title="Remove equipment"><svg class="icon "
+                        viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 6h18M8 6V3h8v3M19 6l-1 15H6L5 6M10 11v5M14 11v5"></path>
+                      </svg></button></div>
+                </td>
+              </tr>
+              <tr>
+                <td data-label="Equipment">
+                  <div class="inventory-name"><span class="inventory-icon"><svg class="icon " viewBox="0 0 24 24"
+                        aria-hidden="true">
+                        <rect x="5" y="2" width="14" height="20" rx="3"></rect>
+                        <circle cx="12" cy="15" r="4"></circle>
+                        <circle cx="12" cy="7" r="2"></circle>
+                        <path d="M9 22h6"></path>
+                      </svg></span><span><span class="cell-primary">Portable PA Audio System</span><span
+                        class="cell-secondary truncate">Rechargeable PA speaker with wireless microphone, Bluetooth
+                        input and adjustable tripod stand.</span></span></div>
+                </td>
+                <td data-label="Category"><span class="category-badge">Audio Systems</span></td>
+                <td data-label="Total quantity"><strong>3</strong> units</td>
+                <td data-label="Currently reserved"><strong class="">0</strong> units</td>
+                <td data-label="Available"><strong class="text-success">3</strong> units</td>
+                <td data-label="Condition"><span class="condition-badge status-good">Good</span></td>
+                <td data-label="Actions">
+                  <div class="table-actions"><button class="icon-button" type="button"
+                      data-action="equipment-availability" data-id="eq-audio" title="View all slot availability"><svg
+                        class="icon " viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                      </svg></button><button class="icon-button" type="button" data-action="edit-equipment"
+                      data-id="eq-audio" title="Edit equipment"><svg class="icon " viewBox="0 0 24 24"
+                        aria-hidden="true">
+                        <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
+                      </svg></button><button class="icon-button action-delete" type="button"
+                      data-action="delete-equipment" data-id="eq-audio" title="Remove equipment"><svg class="icon "
+                        viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M3 6h18M8 6V3h8v3M19 6l-1 15H6L5 6M10 11v5M14 11v5"></path>
+                      </svg></button></div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
 
-    <!-- modal dialog -->
-    <div class="modal-backdrop" id="modal-backdrop" hidden>
+  <!-- add/edit equipment modal dialog -->
+  <div class="modal-backdrop" id="modal-backdrop" hidden>
     <div class="modal " id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div id="modal-content">
-    <form id="equipment-form" data-equipment-id="">
-      <div class="modal-header"><div class="modal-heading"><span class="modal-heading-icon "><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg></span><div><h2 id="modal-title">Add new equipment</h2><p>Add a new item to the department inventory.</p></div></div><button class="icon-button modal-close" type="button" data-close-modal="" aria-label="Close dialog"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div>
-      <div class="modal-body">
-        <div class="field-group"><label for="equipment-name">Equipment name <span class="required">*</span></label><input id="equipment-name" name="name" required="" value="" placeholder="e.g. Wireless Presentation Clicker"><span class="field-error" data-error-for="equipment-name"></span></div>
-        <div class="form-grid two-columns">
-          <div class="field-group"><label for="equipment-category-form">Category <span class="required">*</span></label><select id="equipment-category-form" name="category" required=""><option value="Projectors">Projectors</option><option value="HDMI Cables">HDMI Cables</option><option value="Extension Boards">Extension Boards</option><option value="Audio Systems">Audio Systems</option></select></div>
-          <div class="field-group"><label for="equipment-total">Total quantity <span class="required">*</span></label><input id="equipment-total" name="total" type="number" min="0" step="1" required="" value="1"><span class="field-error" data-error-for="equipment-total"></span></div>
-        </div>
-        <div class="field-group"><label for="equipment-condition">Equipment condition</label><select id="equipment-condition" name="condition"><option>Good</option><option>Under Maintenance</option><option>Damaged</option></select></div>
-        <div class="field-group"><label for="equipment-description">Short description <span class="required">*</span></label><textarea id="equipment-description" name="description" required="" placeholder="Describe key features and typical academic use."></textarea><span class="field-error" data-error-for="equipment-description"></span></div>
-        
-        
+        <form id="equipment-form" data-equipment-id="">
+          <div class="modal-header">
+            <div class="modal-heading"><span class="modal-heading-icon "><svg class="icon " viewBox="0 0 24 24"
+                  aria-hidden="true">
+                  <path d="M12 5v14M5 12h14"></path>
+                </svg></span>
+              <div>
+                <h2 id="modal-title">Add new equipment</h2>
+                <p>Add a new item to the department inventory.</p>
+              </div>
+            </div><button class="icon-button modal-close" type="button" data-close-modal=""
+              aria-label="Close dialog"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M18 6 6 18M6 6l12 12"></path>
+              </svg></button>
+          </div>
+          <div class="modal-body">
+            <div class="field-group"><label for="equipment-name">Equipment name <span
+                  class="required">*</span></label><input id="equipment-name" name="name" required="" value=""
+                placeholder="e.g. Wireless Presentation Clicker"><span class="field-error"
+                data-error-for="equipment-name"></span></div>
+            <div class="form-grid two-columns">
+              <div class="field-group"><label for="equipment-category-form">Category <span
+                    class="required">*</span></label><select id="equipment-category-form" name="category" required="">
+                  <option value="Projectors">Projectors</option>
+                  <option value="HDMI Cables">HDMI Cables</option>
+                  <option value="Extension Boards">Extension Boards</option>
+                  <option value="Audio Systems">Audio Systems</option>
+                </select></div>
+              <div class="field-group"><label for="equipment-total">Total quantity <span
+                    class="required">*</span></label><input id="equipment-total" name="total" type="number" min="0"
+                  step="1" required="" value="1"><span class="field-error" data-error-for="equipment-total"></span>
+              </div>
+            </div>
+            <div class="field-group"><label for="equipment-condition">Equipment condition</label><select
+                id="equipment-condition" name="condition">
+                <option>Good</option>
+                <option>Under Maintenance</option>
+                <option>Damaged</option>
+              </select></div>
+            <div class="field-group"><label for="equipment-description">Short description <span
+                  class="required">*</span></label><textarea id="equipment-description" name="description" required=""
+                placeholder="Describe key features and typical academic use."></textarea><span class="field-error"
+                data-error-for="equipment-description"></span></div>
+
+
+          </div>
+          <div class="modal-footer"><button class="button button-outline" type="button"
+              data-close-modal="">Cancel</button><button class="button button-primary" type="submit"><svg class="icon "
+                viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m5 12 4 4L19 6"></path>
+              </svg> Add equipment</button></div>
+        </form>
       </div>
-      <div class="modal-footer"><button class="button button-outline" type="button" data-close-modal="">Cancel</button><button class="button button-primary" type="submit"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"></path></svg> Add equipment</button></div>
-    </form></div>
     </div>
   </div>
 </div>
