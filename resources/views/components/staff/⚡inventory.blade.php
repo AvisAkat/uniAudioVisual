@@ -1,9 +1,145 @@
 <?php
 
 use Livewire\Component;
+use App\Models\Equipment;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Livewire\Attributes\Computed;
 
 new class extends Component {
-  //
+  public bool $showModal = false;
+
+  public ?int $editingEquipmentId = null;
+
+  public string $name = '';
+
+  public string $category = 'Projectors';
+
+  public int $totalQuantity = 1;
+
+  public string $condition = 'Good';
+
+  public string $description = '';
+
+  #[Computed]
+  public function equipmentItems(): Collection
+  {
+    return Equipment::query()->orderBy('name')->get();
+  }
+
+  public function openCreateModal(): void
+  {
+    $this->authorizeStaff();
+    $this->resetForm();
+    $this->showModal = true;
+  }
+
+  public function editEquipment(int $equipmentId): void
+  {
+    $this->authorizeStaff();
+
+    $equipment = Equipment::query()->findOrFail($equipmentId);
+
+    $this->editingEquipmentId = $equipment->id;
+    $this->name = $equipment->name;
+    $this->category = $equipment->category;
+    $this->totalQuantity = $equipment->total_quantity;
+    $this->condition = $equipment->condition;
+    $this->description = $equipment->description ?? '';
+    $this->resetValidation();
+    $this->showModal = true;
+  }
+
+  public function saveEquipment(): void
+  {
+    $this->authorizeStaff();
+
+    $validated = $this->validate([
+      'name' => ['required', 'string', 'max:255'],
+      'category' => ['required', 'string', Rule::in(['Projectors', 'HDMI Cables', 'Extension Boards', 'Audio Systems'])],
+      'totalQuantity' => ['required', 'integer', 'min:0'],
+      'condition' => ['required', 'string', Rule::in(['Good', 'Under Maintenance', 'Damaged'])],
+      'description' => ['required', 'string', 'max:2000'],
+    ]);
+
+    $this->editingEquipmentId === null
+      ? $isEdit = false
+      : $isEdit = true;
+
+    $equipment = $this->editingEquipmentId === null
+      ? new Equipment()
+      : Equipment::query()->findOrFail($this->editingEquipmentId);
+
+    $reservedQuantity = $equipment->exists
+      ? max(0, $equipment->total_quantity - $equipment->available_quantity)
+      : 0;
+    $newTotalQuantity = (int) $validated['totalQuantity'];
+
+    if ($newTotalQuantity < $reservedQuantity) {
+      $this->addError('totalQuantity', "Total quantity cannot be less than the {$reservedQuantity} currently reserved units.");
+
+      return;
+    }
+
+    $equipment->fill([
+      'name' => $validated['name'],
+      'category' => $validated['category'],
+      'description' => $validated['description'],
+      'total_quantity' => $newTotalQuantity,
+      'available_quantity' => $newTotalQuantity - $reservedQuantity,
+      'condition' => $validated['condition'],
+    ]);
+
+    if (!$equipment->exists) {
+      $equipment->asset_code = 'EQ-' . Str::upper(Str::random(10));
+    }
+
+    $saved = $equipment->save();
+
+    if (!$saved) {
+      $this->dispatch(
+        'toast',
+        title: 'Something went wrong',
+        message: 'Unable to save the equipment item. Please try again later.',
+        type: 'error'
+      );
+
+      return;
+    } else {
+      $this->resetForm();
+      $this->showModal = false;
+      unset($this->equipmentItems);
+
+      $this->dispatch(
+        'toast',
+        title: 'Success',
+        message: !$isEdit
+        ? 'New equipment item has been added to the inventory.'
+        : 'Equipment item has been updated successfully.',
+        type: 'success'
+      );
+    }
+
+  }
+
+  public function closeModal(): void
+  {
+    $this->resetForm();
+    $this->showModal = false;
+  }
+
+  private function resetForm(): void
+  {
+    $this->reset('editingEquipmentId', 'name', 'totalQuantity', 'condition', 'description');
+    $this->category = 'Projectors';
+    $this->resetValidation();
+  }
+
+  private function authorizeStaff(): void
+  {
+    abort_unless(auth()->user()?->role === 'staff', 403);
+  }
 };
 ?>
 
@@ -16,7 +152,7 @@ new class extends Component {
           <p>Stock figures below are calculated for <strong>8 Nov 2026</strong>, <strong>2:00 PM – 3:00 PM</strong>.</p>
         </div>
         <div class="section-actions"><button class="button button-primary" type="button"
-            data-action="add-equipment"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
+            wire:click="openCreateModal"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 5v14M5 12h14"></path>
             </svg> Add equipment</button></div>
       </div>
@@ -63,8 +199,9 @@ new class extends Component {
           </select></div><button class="button button-outline" type="button"
           data-action="reset-inventory-filters">Reset</button>
       </div>
-      <div class="results-meta"><span>4 equipment type(s) · 31 total units shown</span><span>Reserved = Pending +
-          Approved for selected slot</span></div>
+      <div class="results-meta"><span>{{ $this->equipmentItems->count() }} equipment type(s) ·
+          {{ $this->equipmentItems->sum('total_quantity') }} total units</span><span>Reserved = total quantity minus
+          available quantity</span></div>
       <div class="table-card">
         <div class="table-wrap">
           <table class="data-table responsive-table">
@@ -80,138 +217,55 @@ new class extends Component {
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td data-label="Equipment">
-                  <div class="inventory-name"><span class="inventory-icon"><svg class="icon " viewBox="0 0 24 24"
-                        aria-hidden="true">
-                        <rect x="3" y="7" width="18" height="11" rx="2"></rect>
-                        <circle cx="15" cy="12.5" r="2.5"></circle>
-                        <path d="M7 11h3M7 14h2M6 18v2M18 18v2M6 7V5h5v2"></path>
-                      </svg></span><span><span class="cell-primary">Epson EB-2265U Projector</span><span
-                        class="cell-secondary truncate">Bright 5,500-lumen projector with wireless display and HDMI
-                        connectivity for lectures and presentations.</span></span></div>
-                </td>
-                <td data-label="Category"><span class="category-badge">Projectors</span></td>
-                <td data-label="Total quantity"><strong>5</strong> units</td>
-                <td data-label="Currently reserved"><strong class="">0</strong> units</td>
-                <td data-label="Available"><strong class="text-success">5</strong> units</td>
-                <td data-label="Condition"><span class="condition-badge status-good">Good</span></td>
-                <td data-label="Actions">
-                  <div class="table-actions"><button class="icon-button" type="button"
-                      data-action="equipment-availability" data-id="eq-projector"
-                      title="View all slot availability"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg></button><button class="icon-button" type="button" data-action="edit-equipment"
-                      data-id="eq-projector" title="Edit equipment"><svg class="icon " viewBox="0 0 24 24"
-                        aria-hidden="true">
-                        <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
-                      </svg></button><button class="icon-button action-delete" type="button"
-                      data-action="delete-equipment" data-id="eq-projector" title="Remove equipment"><svg class="icon "
-                        viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M3 6h18M8 6V3h8v3M19 6l-1 15H6L5 6M10 11v5M14 11v5"></path>
-                      </svg></button></div>
-                </td>
-              </tr>
-              <tr>
-                <td data-label="Equipment">
-                  <div class="inventory-name"><span class="inventory-icon"><svg class="icon " viewBox="0 0 24 24"
-                        aria-hidden="true">
-                        <path
-                          d="M8 3v5M5 3v5M4 8h5v3a3 3 0 0 1-3 3H5a3 3 0 0 0-3 3v4M16 21v-5M19 21v-5M15 16h5v-3a3 3 0 0 1 3-3h0a3 3 0 0 0 3-3V3"
-                          transform="translate(-2 0) scale(.95)"></path>
-                      </svg></span><span><span class="cell-primary">High-Speed HDMI Cable (3m)</span><span
-                        class="cell-secondary truncate">Durable HDMI 2.0 cable supporting 4K video and audio between
-                        laptops, projectors and displays.</span></span></div>
-                </td>
-                <td data-label="Category"><span class="category-badge">HDMI Cables</span></td>
-                <td data-label="Total quantity"><strong>15</strong> units</td>
-                <td data-label="Currently reserved"><strong class="">0</strong> units</td>
-                <td data-label="Available"><strong class="text-success">15</strong> units</td>
-                <td data-label="Condition"><span class="condition-badge status-good">Good</span></td>
-                <td data-label="Actions">
-                  <div class="table-actions"><button class="icon-button" type="button"
-                      data-action="equipment-availability" data-id="eq-hdmi" title="View all slot availability"><svg
-                        class="icon " viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg></button><button class="icon-button" type="button" data-action="edit-equipment"
-                      data-id="eq-hdmi" title="Edit equipment"><svg class="icon " viewBox="0 0 24 24"
-                        aria-hidden="true">
-                        <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
-                      </svg></button><button class="icon-button action-delete" type="button"
-                      data-action="delete-equipment" data-id="eq-hdmi" title="Remove equipment"><svg class="icon "
-                        viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M3 6h18M8 6V3h8v3M19 6l-1 15H6L5 6M10 11v5M14 11v5"></path>
-                      </svg></button></div>
-                </td>
-              </tr>
-              <tr>
-                <td data-label="Equipment">
-                  <div class="inventory-name"><span class="inventory-icon"><svg class="icon " viewBox="0 0 24 24"
-                        aria-hidden="true">
-                        <rect x="2" y="8" width="20" height="8" rx="2"></rect>
-                        <path d="M6 11v2M10 11v2M14 11v2M18 11v2M12 8V5a3 3 0 0 1 3-3h2"></path>
-                      </svg></span><span><span class="cell-primary">8-Way Surge Extension Board</span><span
-                        class="cell-secondary truncate">Surge-protected eight-way power board with a 5-metre lead for
-                        classroom and event setups.</span></span></div>
-                </td>
-                <td data-label="Category"><span class="category-badge">Extension Boards</span></td>
-                <td data-label="Total quantity"><strong>8</strong> units</td>
-                <td data-label="Currently reserved"><strong class="">0</strong> units</td>
-                <td data-label="Available"><strong class="text-success">8</strong> units</td>
-                <td data-label="Condition"><span class="condition-badge status-good">Good</span></td>
-                <td data-label="Actions">
-                  <div class="table-actions"><button class="icon-button" type="button"
-                      data-action="equipment-availability" data-id="eq-extension"
-                      title="View all slot availability"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg></button><button class="icon-button" type="button" data-action="edit-equipment"
-                      data-id="eq-extension" title="Edit equipment"><svg class="icon " viewBox="0 0 24 24"
-                        aria-hidden="true">
-                        <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
-                      </svg></button><button class="icon-button action-delete" type="button"
-                      data-action="delete-equipment" data-id="eq-extension" title="Remove equipment"><svg class="icon "
-                        viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M3 6h18M8 6V3h8v3M19 6l-1 15H6L5 6M10 11v5M14 11v5"></path>
-                      </svg></button></div>
-                </td>
-              </tr>
-              <tr>
-                <td data-label="Equipment">
-                  <div class="inventory-name"><span class="inventory-icon"><svg class="icon " viewBox="0 0 24 24"
-                        aria-hidden="true">
-                        <rect x="5" y="2" width="14" height="20" rx="3"></rect>
-                        <circle cx="12" cy="15" r="4"></circle>
-                        <circle cx="12" cy="7" r="2"></circle>
-                        <path d="M9 22h6"></path>
-                      </svg></span><span><span class="cell-primary">Portable PA Audio System</span><span
-                        class="cell-secondary truncate">Rechargeable PA speaker with wireless microphone, Bluetooth
-                        input and adjustable tripod stand.</span></span></div>
-                </td>
-                <td data-label="Category"><span class="category-badge">Audio Systems</span></td>
-                <td data-label="Total quantity"><strong>3</strong> units</td>
-                <td data-label="Currently reserved"><strong class="">0</strong> units</td>
-                <td data-label="Available"><strong class="text-success">3</strong> units</td>
-                <td data-label="Condition"><span class="condition-badge status-good">Good</span></td>
-                <td data-label="Actions">
-                  <div class="table-actions"><button class="icon-button" type="button"
-                      data-action="equipment-availability" data-id="eq-audio" title="View all slot availability"><svg
-                        class="icon " viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg></button><button class="icon-button" type="button" data-action="edit-equipment"
-                      data-id="eq-audio" title="Edit equipment"><svg class="icon " viewBox="0 0 24 24"
-                        aria-hidden="true">
-                        <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
-                      </svg></button><button class="icon-button action-delete" type="button"
-                      data-action="delete-equipment" data-id="eq-audio" title="Remove equipment"><svg class="icon "
-                        viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="M3 6h18M8 6V3h8v3M19 6l-1 15H6L5 6M10 11v5M14 11v5"></path>
-                      </svg></button></div>
-                </td>
-              </tr>
+              @forelse ($this->equipmentItems as $equipment)
+                <tr wire:key="equipment-{{ $equipment->id }}">
+                  <td data-label="Equipment">
+                    <div class="inventory-name">
+                      <span class="inventory-icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <rect x="3" y="7" width="18" height="11" rx="2"></rect>
+                          <path d="M7 11h10M7 14h6M6 18v2M18 18v2"></path>
+                        </svg>
+                      </span>
+                      <span>
+                        <span class="cell-primary">{{ $equipment->name }}</span>
+                        <span class="cell-secondary truncate">{{ $equipment->description }}</span>
+                        <span class="cell-secondary">Asset code: {{ $equipment->asset_code }}</span>
+                      </span>
+                    </div>
+                  </td>
+                  <td data-label="Category"><span class="category-badge">{{ $equipment->category }}</span></td>
+                  <td data-label="Total quantity"><strong>{{ $equipment->total_quantity }}</strong> units</td>
+                  <td data-label="Currently reserved">
+                    <strong>{{ $equipment->total_quantity - $equipment->available_quantity }}</strong> units
+                  </td>
+                  <td data-label="Available"><strong class="text-success">{{ $equipment->available_quantity }}</strong>
+                    units</td>
+                  <td data-label="Condition"><span
+                      class="condition-badge status-{{ strtolower($equipment->condition) }}">{{ $equipment->condition }}</span>
+                  </td>
+                  <td data-label="Actions">
+                    <div class="table-actions">
+                      <button class="icon-button" type="button" data-action="equipment-availability"
+                        data-id="eq-projector" title="View all slot availability"><svg class="icon " viewBox="0 0 24 24"
+                          aria-hidden="true">
+                          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      </button>
+                      <button class="icon-button" type="button" wire:click="editEquipment({{ $equipment->id }})"
+                        title="Edit equipment">
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              @empty
+                <tr>
+                  <td colspan="7">No equipment has been added yet.</td>
+                </tr>
+              @endforelse
             </tbody>
           </table>
         </div>
@@ -219,62 +273,175 @@ new class extends Component {
     </div>
   </section>
 
-  <!-- add/edit equipment modal dialog -->
-  <div class="modal-backdrop" id="modal-backdrop" hidden>
-    <div class="modal " id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div id="modal-content">
-        <form id="equipment-form" data-equipment-id="">
-          <div class="modal-header">
-            <div class="modal-heading"><span class="modal-heading-icon "><svg class="icon " viewBox="0 0 24 24"
-                  aria-hidden="true">
-                  <path d="M12 5v14M5 12h14"></path>
-                </svg></span>
-              <div>
-                <h2 id="modal-title">Add new equipment</h2>
-                <p>Add a new item to the department inventory.</p>
-              </div>
-            </div><button class="icon-button modal-close" type="button" data-close-modal=""
-              aria-label="Close dialog"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M18 6 6 18M6 6l12 12"></path>
-              </svg></button>
-          </div>
-          <div class="modal-body">
-            <div class="field-group"><label for="equipment-name">Equipment name <span
-                  class="required">*</span></label><input id="equipment-name" name="name" required="" value=""
-                placeholder="e.g. Wireless Presentation Clicker"><span class="field-error"
-                data-error-for="equipment-name"></span></div>
-            <div class="form-grid two-columns">
-              <div class="field-group"><label for="equipment-category-form">Category <span
-                    class="required">*</span></label><select id="equipment-category-form" name="category" required="">
-                  <option value="Projectors">Projectors</option>
-                  <option value="HDMI Cables">HDMI Cables</option>
-                  <option value="Extension Boards">Extension Boards</option>
-                  <option value="Audio Systems">Audio Systems</option>
-                </select></div>
-              <div class="field-group"><label for="equipment-total">Total quantity <span
-                    class="required">*</span></label><input id="equipment-total" name="total" type="number" min="0"
-                  step="1" required="" value="1"><span class="field-error" data-error-for="equipment-total"></span>
-              </div>
+  @if ($showModal)
+    {{-- Add/Edit equipment modal --}}
+    <div class="modal-backdrop" id="modal-backdrop">
+      <div class="modal " id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div id="modal-content">
+          <form id="equipment-form" wire:submit="saveEquipment">
+            <div class="modal-header">
+              <div class="modal-heading"><span class="modal-heading-icon "><svg class="icon " viewBox="0 0 24 24"
+                    aria-hidden="true">
+                    <path d="M12 5v14M5 12h14"></path>
+                  </svg></span>
+                <div>
+                  <h2 id="modal-title">{{ $editingEquipmentId ? 'Edit equipment' : 'Add new equipment' }}</h2>
+                  <p>
+                    {{ $editingEquipmentId ? 'Update this inventory item.' : 'Add a new item to the department inventory.' }}
+                  </p>
+                </div>
+              </div><button class="icon-button modal-close" type="button" wire:click="closeModal"
+                aria-label="Close dialog"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M18 6 6 18M6 6l12 12"></path>
+                </svg></button>
             </div>
-            <div class="field-group"><label for="equipment-condition">Equipment condition</label><select
-                id="equipment-condition" name="condition">
-                <option>Good</option>
-                <option>Under Maintenance</option>
-                <option>Damaged</option>
-              </select></div>
-            <div class="field-group"><label for="equipment-description">Short description <span
-                  class="required">*</span></label><textarea id="equipment-description" name="description" required=""
-                placeholder="Describe key features and typical academic use."></textarea><span class="field-error"
-                data-error-for="equipment-description"></span></div>
+            <div class="modal-body">
+              <div class="field-group"><label for="equipment-name">Equipment name <span
+                    class="required">*</span></label><input id="equipment-name" wire:model="name" required
+                  placeholder="e.g. Wireless Presentation Clicker">
+                @error('name') <span class="field-error">{{ $message }}</span> @enderror
+              </div>
+              <div class="form-grid two-columns">
+                <div class="field-group"><label for="equipment-category-form">Category <span
+                      class="required">*</span></label><select id="equipment-category-form" wire:model="category"
+                    required>
+                    <option value="Projectors">Projectors</option>
+                    <option value="HDMI Cables">HDMI Cables</option>
+                    <option value="Extension Boards">Extension Boards</option>
+                    <option value="Audio Systems">Audio Systems</option>
+                  </select></div>
+                <div class="field-group"><label for="equipment-total">Total quantity <span
+                      class="required">*</span></label><input id="equipment-total" wire:model="totalQuantity"
+                    type="number" min="0" step="1" required>
+                  @error('totalQuantity') <span class="field-error">{{ $message }}</span> @enderror
+                </div>
+              </div>
+              <div class="field-group"><label for="equipment-condition">Equipment condition</label><select
+                  id="equipment-condition" wire:model="condition">
+                  <option>Good</option>
+                  <option>Under Maintenance</option>
+                  <option>Damaged</option>
+                </select></div>
+              <div class="field-group"><label for="equipment-description">Short description <span
+                    class="required">*</span></label><textarea id="equipment-description" wire:model="description"
+                  required placeholder="Describe key features and typical academic use."></textarea>
+                @error('description') <span class="field-error">{{ $message }}</span> @enderror
+              </div>
 
 
+            </div>
+            <div class="modal-footer"><button class="button button-outline" type="button"
+                wire:click="closeModal">Cancel</button><button class="button button-primary" type="submit"
+                wire:loading.attr="disabled"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m5 12 4 4L19 6"></path>
+                </svg> {{ $editingEquipmentId ? 'Save changes' : 'Add equipment' }}</button></div>
+          </form>
+        </div>
+      </div>
+    </div>
+  @endif
+
+  {{-- View Equipment modal --}}
+  <div class="modal-backdrop" id="modal-backdrop">
+    <div class="modal modal-large" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div id="modal-content">
+        <div class="modal-header">
+          <div class="modal-heading"><span class="modal-heading-icon "><svg class="icon " viewBox="0 0 24 24"
+                aria-hidden="true">
+                <circle cx="12" cy="12" r="9"></circle>
+                <path d="M12 7v5l3 2"></path>
+              </svg></span>
+            <div>
+              <h2 id="modal-title">Equipment availability</h2>
+              <p>Epson EB-2265U Projector · 8 Nov 2026</p>
+            </div>
+          </div><button class="icon-button modal-close" type="button" data-close-modal="" aria-label="Close dialog"><svg
+              class="icon " viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 6 6 18M6 6l12 12"></path>
+            </svg></button>
+        </div>
+        <div class="modal-body">
+          <div class="availability-panel">
+            <div><small>Total inventory</small><strong>5</strong></div>
+            <div><small>Condition</small><strong style="font-size:13px">Good</strong></div>
+            <div><small>Selected date</small><strong style="font-size:13px">8 Nov</strong></div>
           </div>
-          <div class="modal-footer"><button class="button button-outline" type="button"
-              data-close-modal="">Cancel</button><button class="button button-primary" type="submit"><svg class="icon "
-                viewBox="0 0 24 24" aria-hidden="true">
-                <path d="m5 12 4 4L19 6"></path>
-              </svg> Add equipment</button></div>
-        </form>
+          <div class="table-wrap">
+            <table class="data-table responsive-table">
+              <thead>
+                <tr>
+                  <th>Time slot</th>
+                  <th>Reserved</th>
+                  <th>Available</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td data-label="Time slot"><span class="cell-primary">8:00 AM – 9:00 AM</span></td>
+                  <td data-label="Reserved">0</td>
+                  <td data-label="Available"><strong class="text-success">5</strong></td>
+                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
+                </tr>
+                <tr>
+                  <td data-label="Time slot"><span class="cell-primary">9:00 AM – 10:00 AM</span></td>
+                  <td data-label="Reserved">0</td>
+                  <td data-label="Available"><strong class="text-success">5</strong></td>
+                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
+                </tr>
+                <tr>
+                  <td data-label="Time slot"><span class="cell-primary">10:00 AM – 11:00 AM</span></td>
+                  <td data-label="Reserved">0</td>
+                  <td data-label="Available"><strong class="text-success">5</strong></td>
+                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
+                </tr>
+                <tr>
+                  <td data-label="Time slot"><span class="cell-primary">11:00 AM – 12:00 PM</span></td>
+                  <td data-label="Reserved">0</td>
+                  <td data-label="Available"><strong class="text-success">5</strong></td>
+                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
+                </tr>
+                <tr>
+                  <td data-label="Time slot"><span class="cell-primary">12:00 PM – 1:00 PM</span></td>
+                  <td data-label="Reserved">0</td>
+                  <td data-label="Available"><strong class="text-success">5</strong></td>
+                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
+                </tr>
+                <tr>
+                  <td data-label="Time slot"><span class="cell-primary">1:00 PM – 2:00 PM</span></td>
+                  <td data-label="Reserved">0</td>
+                  <td data-label="Available"><strong class="text-success">5</strong></td>
+                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
+                </tr>
+                <tr>
+                  <td data-label="Time slot"><span class="cell-primary">2:00 PM – 3:00 PM</span></td>
+                  <td data-label="Reserved">0</td>
+                  <td data-label="Available"><strong class="text-success">5</strong></td>
+                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
+                </tr>
+                <tr>
+                  <td data-label="Time slot"><span class="cell-primary">3:00 PM – 4:00 PM</span></td>
+                  <td data-label="Reserved">0</td>
+                  <td data-label="Available"><strong class="text-success">5</strong></td>
+                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
+                </tr>
+                <tr>
+                  <td data-label="Time slot"><span class="cell-primary">4:00 PM – 5:00 PM</span></td>
+                  <td data-label="Reserved">0</td>
+                  <td data-label="Available"><strong class="text-success">5</strong></td>
+                  <td data-label="Status"><span class="status-badge status-available">Available</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="form-note" style="margin-top:15px"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"></circle>
+              <path d="M12 11v6M12 7h.01"></path>
+            </svg><span>Availability = total inventory minus pending and approved reservations in each individual slot.
+              Maintenance or damaged stock is not bookable.</span></div>
+        </div>
+        <div class="modal-footer"><button class="button button-primary" type="button" data-close-modal="">Done</button>
+        </div>
       </div>
     </div>
   </div>
