@@ -293,15 +293,7 @@
                     {{-- Theme toggle button --}}
                     <x-theme-toggle />
                     <div class="notification-wrap">
-                        <button type="button" id="notification-toggle" class="icon-button notification-button"
-                            aria-label="Open notifications" aria-expanded="false" aria-controls="notification-drawer"
-                            onclick="toggleNotifications()">
-                            <span data-icon="bell">
-                                <svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"></path>
-                                </svg>
-                            </span>
-                        </button>
+                        @livewire('notification-panel')
                     </div>
                     <button class="topbar-profile" type="button" data-view="overview" aria-label="Open dashboard">
                         <span class="avatar" id="topbar-avatar" style="text-transform: uppercase">
@@ -326,9 +318,6 @@
             </footer>
         </div>
     </div>
-
-    <!-- Notification drawer -->
-    @livewire('notification-panel')
 
     <script src="{{ asset('src/scripts/app.js') }}"></script>
     @stack('scripts')

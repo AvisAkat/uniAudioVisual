@@ -3,6 +3,7 @@
 use App\Models\ActivityLog;
 use App\Models\Booking;
 use App\Models\Equipment;
+use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
@@ -279,6 +280,14 @@ new class extends Component
                     $booking,
                 );
 
+                Notification::createForUser(
+                    $booking->user_id,
+                    'Booking rejected',
+                    'Your booking '.$this->bookingReference($booking).' was rejected. Reason: '.$validated['rejectionReason'],
+                    'warning',
+                    $booking,
+                );
+
                 return ['status' => 'Rejected'];
             }
 
@@ -322,6 +331,14 @@ new class extends Component
                 'Booking approved',
                 'Booking',
                 'Approved booking '.$this->bookingReference($booking).'.',
+                $booking,
+            );
+
+            Notification::createForUser(
+                $booking->user_id,
+                'Booking approved',
+                'Your booking '.$this->bookingReference($booking).' has been approved.',
+                'success',
                 $booking,
             );
 
@@ -373,6 +390,14 @@ new class extends Component
                 'Booking completed',
                 'Booking',
                 'Completed and returned booking '.$this->bookingReference($booking).'.',
+                $booking,
+            );
+
+            Notification::createForUser(
+                $booking->user_id,
+                'Booking completed',
+                'Your booking '.$this->bookingReference($booking).' has been marked as returned and completed.',
+                'success',
                 $booking,
             );
 

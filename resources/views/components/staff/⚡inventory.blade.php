@@ -2,6 +2,7 @@
 
 use App\Models\ActivityLog;
 use App\Models\Equipment;
+use App\Models\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -188,6 +189,15 @@ new class extends Component
                 $equipment,
             );
 
+            Notification::sendToRoles(
+                ['staff', 'admin'],
+                'Equipment removed',
+                "{$equipment->name} ({$equipment->asset_code}) was removed from inventory.",
+                'warning',
+                $equipment,
+                auth()->user(),
+            );
+
             return true;
         });
 
@@ -269,6 +279,17 @@ new class extends Component
                   ? "Updated {$equipment->name}; total quantity is {$newTotalQuantity} and condition is {$equipment->condition}."
                   : "Added {$equipment->name} ({$equipment->category}) with {$newTotalQuantity} unit(s).",
                 $equipment,
+            );
+
+            Notification::sendToRoles(
+                ['staff', 'admin'],
+                $isEdit ? 'Equipment updated' : 'Equipment added',
+                $isEdit
+                    ? "{$equipment->name} was updated; total quantity is {$newTotalQuantity} and condition is {$equipment->condition}."
+                    : "{$equipment->name} ({$equipment->category}) was added with {$newTotalQuantity} unit(s).",
+                $isEdit ? 'info' : 'success',
+                $equipment,
+                auth()->user(),
             );
 
             return true;

@@ -2,6 +2,7 @@
 
 use App\Models\ActivityLog;
 use App\Models\Booking;
+use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -314,6 +315,16 @@ new class extends Component {
                 ($isCreating ? 'Created' : 'Updated') . ' the account for ' . $user->name . '.',
                 $user,
             );
+
+            Notification::createForUser(
+                (int) $user->getKey(),
+                $isCreating ? 'Account created' : 'Account updated',
+                $isCreating
+                    ? 'Your account was created successfully. You can now sign in to AVBMS.'
+                    : 'An administrator updated your account details.',
+                $isCreating ? 'success' : 'info',
+                $user,
+            );
         });
 
         $this->closeModal();
@@ -361,6 +372,16 @@ new class extends Component {
                 $newStatus === 'active' ? 'Account reactivated' : 'Account suspended',
                 'User Management',
                 ucfirst($newStatus) . ' the account for ' . $user->name . '.',
+                $user,
+            );
+
+            Notification::createForUser(
+                (int) $user->getKey(),
+                $newStatus === 'active' ? 'Account reactivated' : 'Account suspended',
+                $newStatus === 'active'
+                    ? 'Your account has been reactivated. You can sign in again.'
+                    : 'Your account has been suspended. Contact an administrator if you believe this is a mistake.',
+                $newStatus === 'active' ? 'success' : 'warning',
                 $user,
             );
         });

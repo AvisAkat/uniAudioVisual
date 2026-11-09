@@ -3,6 +3,7 @@
 use App\Models\ActivityLog;
 use App\Models\Booking;
 use App\Models\Equipment;
+use App\Models\Notification;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -309,6 +310,14 @@ new class extends Component
                 'Booking submitted',
                 'Booking',
                 "Submitted a request for {$booking->quantity} × {$equipment->name} on {$validated['availabilityDate']} ({$slot['label']}).",
+                $booking,
+            );
+
+            Notification::sendToRoles(
+                ['staff', 'admin'],
+                'New booking request',
+                "A request for {$booking->quantity} × {$equipment->name} on {$validated['availabilityDate']} needs review.",
+                'info',
                 $booking,
             );
 

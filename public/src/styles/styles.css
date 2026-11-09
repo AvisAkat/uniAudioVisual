@@ -3410,6 +3410,13 @@ html[data-theme="dark"] .category-tab.is-active {
   font-size: 9px;
 }
 
+.notification-empty {
+  padding: 25px 20px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 10px;
+}
+
 .drawer-footer {
   display: flex;
   gap: 8px;

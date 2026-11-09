@@ -2,6 +2,7 @@
 
 use App\Models\ActivityLog;
 use App\Models\Booking;
+use App\Models\Notification;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -141,6 +142,15 @@ new class extends Component
                 'Booking',
                 'Cancelled booking '.$this->bookingReference($booking).'.',
                 $booking,
+            );
+
+            Notification::sendToRoles(
+                ['staff', 'admin'],
+                'Booking cancelled',
+                'A student cancelled booking '.$this->bookingReference($booking).'.',
+                'warning',
+                $booking,
+                auth()->user(),
             );
 
             return true;

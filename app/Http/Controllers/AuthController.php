@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -49,6 +50,14 @@ class AuthController extends Controller
                     'Authentication',
                     'Created a student account.',
                     $user,
+                    $user,
+                );
+
+                Notification::createForUser(
+                    (int) $user->getKey(),
+                    'Welcome to AVBMS',
+                    'Your student account has been created successfully.',
+                    'success',
                     $user,
                 );
 
