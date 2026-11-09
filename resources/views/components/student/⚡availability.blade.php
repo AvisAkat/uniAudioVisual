@@ -29,13 +29,11 @@ new class extends Component {
         $this->equipmentId = Equipment::query()->orderBy('name')->value('id');
     }
 
-    #[\Livewire\Attributes\Computed]
     public function equipmentOptions(): Collection
     {
         return Equipment::query()->orderBy('name')->get();
     }
 
-    #[\Livewire\Attributes\Computed]
     public function selectedEquipment(): ?Equipment
     {
         return $this->equipmentId === null
@@ -52,7 +50,6 @@ new class extends Component {
         ];
     }
 
-    #[\Livewire\Attributes\Computed]
     public function slotAvailability(): array
     {
         $equipment = $this->selectedEquipment;
@@ -99,7 +96,6 @@ new class extends Component {
         return $availability;
     }
 
-    #[\Livewire\Attributes\Computed]
     public function availabilitySummary(): array
     {
         $availability = $this->slotAvailability;
@@ -122,7 +118,6 @@ new class extends Component {
         ];
     }
 
-    #[\Livewire\Attributes\Computed]
     public function weekDates(): array
     {
         $selectedDate = $this->isValidAvailabilityDate()

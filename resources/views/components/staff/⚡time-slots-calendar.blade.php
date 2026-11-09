@@ -38,7 +38,6 @@ new class extends Component {
         $this->calendarMonth = today()->startOfMonth()->toDateString();
     }
 
-    #[Computed]
     public function equipmentOptions()
     {
         $this->authorizeStaff();
@@ -46,7 +45,6 @@ new class extends Component {
         return Equipment::query()->orderBy('name')->get();
     }
 
-    #[Computed]
     public function calendarDays(): array
     {
         $month = $this->validCalendarMonth();
@@ -61,7 +59,6 @@ new class extends Component {
         return $dates;
     }
 
-    #[Computed]
     public function calendarBookingCounts(): array
     {
         $this->authorizeStaff();
@@ -80,7 +77,6 @@ new class extends Component {
             ->all();
     }
 
-    #[Computed]
     public function selectedDaySummary(): object
     {
         $this->authorizeStaff();
@@ -97,7 +93,6 @@ new class extends Component {
             ->first();
     }
 
-    #[Computed]
     public function slotAvailability(): array
     {
         $this->authorizeStaff();
@@ -147,7 +142,6 @@ new class extends Component {
         return $result;
     }
 
-    #[Computed]
     public function dayBookings(): LengthAwarePaginator
     {
         $this->authorizeStaff();
@@ -159,7 +153,6 @@ new class extends Component {
             ->paginate(15);
     }
 
-    #[Computed]
     public function selectedBooking(): ?Booking
     {
         $this->authorizeStaff();

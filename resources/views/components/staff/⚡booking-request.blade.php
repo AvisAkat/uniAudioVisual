@@ -48,13 +48,11 @@ new class extends Component {
         $this->authorizeStaff();
     }
 
-    #[Computed]
     public function bookingItems()
     {
         return $this->bookingQuery()->paginate(15);
     }
 
-    #[Computed]
     public function bookingCounts(): object
     {
         $this->authorizeStaff();
@@ -67,7 +65,6 @@ new class extends Component {
             ->first();
     }
 
-    #[Computed]
     public function selectedBooking(): ?Booking
     {
         $this->authorizeStaff();

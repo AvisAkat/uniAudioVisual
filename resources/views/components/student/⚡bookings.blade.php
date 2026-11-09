@@ -18,7 +18,6 @@ new class extends Component {
 
     public ?int $cancellingBookingId = null;
 
-    #[\Livewire\Attributes\Computed]
     public function allBookings(): Collection
     {
         return Booking::query()
@@ -27,7 +26,6 @@ new class extends Component {
             ->get();
     }
 
-    #[\Livewire\Attributes\Computed]
     public function bookingItems(): Collection
     {
         $searchTerm = Str::lower(trim($this->search));
@@ -51,7 +49,6 @@ new class extends Component {
         };
     }
 
-    #[\Livewire\Attributes\Computed]
     public function viewedBooking(): ?Booking
     {
         return $this->viewingBookingId === null
@@ -59,7 +56,6 @@ new class extends Component {
             : $this->studentBookings()->with('equipment')->find($this->viewingBookingId);
     }
 
-    #[\Livewire\Attributes\Computed]
     public function bookingToCancel(): ?Booking
     {
         return $this->cancellingBookingId === null

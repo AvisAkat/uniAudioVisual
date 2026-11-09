@@ -36,7 +36,6 @@ new class extends Component {
         $this->bookingSlot = $schedule['slot'];
     }
 
-    #[Computed]
     public function equipmentItems(): Collection
     {
         return Equipment::query()
@@ -54,7 +53,6 @@ new class extends Component {
             ->get();
     }
 
-    #[Computed]
     public function categoryCounts(): array
     {
         return Equipment::query()
@@ -80,7 +78,6 @@ new class extends Component {
         unset($this->equipmentItems);
     }
 
-    #[Computed]
     public function bookingEquipmentOptions(): Collection
     {
         return Equipment::query()
@@ -97,7 +94,6 @@ new class extends Component {
         ];
     }
 
-    #[Computed]
     public function equipmentToBook(): ?Equipment
     {
         return $this->bookingEquipmentId === null
@@ -105,7 +101,6 @@ new class extends Component {
             : Equipment::query()->find($this->bookingEquipmentId);
     }
 
-    #[Computed]
     public function bookingAvailability(): array
     {
         $equipment = $this->equipmentToBook;
