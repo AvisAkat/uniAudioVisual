@@ -231,7 +231,7 @@ new class extends Component {
         }
 
         if ($slotKey === null) {
-            $date->addDay();
+            $date = $date->addDay();
             $slotKey = array_key_first($slots);
         }
 
