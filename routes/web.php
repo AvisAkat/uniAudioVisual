@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\StaffController;
-use App\Http\Controllers\AdminController;
 use App\Http\Controllers\StudentController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,11 +36,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/time-slot', 'timeSlot')->name('time_slot');
     });
 
-    //Admin Routes
+    // Admin Routes
     Route::prefix('admin')->name('admin.')->middleware('admin')->controller(AdminController::class)->group(function () {
         Route::get('/dashboard', 'showDashboard')->name('dashboard');
         Route::get('/manage-users', 'manageUsers')->name('manage_users');
         Route::get('/activity-log', 'activityLog')->name('activity_log');
-        Route::get('/system-settings', 'systemSettings')->name('system_settings');
     });
 });

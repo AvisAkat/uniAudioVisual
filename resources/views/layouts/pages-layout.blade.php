@@ -202,10 +202,24 @@
                                 <span class="nav-label">Usage History</span>
                             </button>
                         </a>
-                        @if (auth()->user()->role == 'admin')
-
+                    </div>
+                    @if (auth()->user()->role == 'admin')
+                        <div class="nav-group" data-staff-nav="">
+                            <span class="nav-group-label brand-copy">Account Management</span>
+                            <a href="{{ route('admin.manage_users') }}">
+                                <button class="nav-item {{ Route::Is('admin.manage_users') ? 'is-active' : '' }}"
+                                    type="button" data-view="users" data-roles="admin">
+                                    <span class="nav-icon" data-icon="users"><svg class="icon " viewBox="0 0 24 24"
+                                            aria-hidden="true">
+                                            <circle cx="9" cy="8" r="3.4"></circle>
+                                            <path d="M2.5 20a6.5 6.5 0 0 1 13 0"></path>
+                                            <path d="M16 5.2a3.4 3.4 0 0 1 0 6.6M17.5 20a6.5 6.5 0 0 0-2.2-4.9"></path>
+                                        </svg></span>
+                                    <span class="nav-label">Users</span>
+                                </button>
+                            </a>
                             <a href="{{ route('admin.activity_log') }}">
-                                <button class="nav-item {{ Route::Is('staff.activity_log') ? 'is-active' : '' }}" type="button"
+                                <button class="nav-item {{ Route::Is('admin.activity_log') ? 'is-active' : '' }}" type="button"
                                     data-view="activity" data-roles="staff,admin">
                                     <span class="nav-icon" data-icon="activity">
                                         <svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
@@ -215,22 +229,24 @@
                                     <span class="nav-label">Activity Log</span>
                                 </button>
                             </a>
-                        @endif
-                    </div>
+                        </div>
+                    @endif
                 @endif
 
             </nav>
-            <div class="sidebar-help brand-copy">
-                <span data-icon="help">
-                    <svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
-                        <circle cx="12" cy="12" r="9"></circle>
-                        <path d="M9.5 9a2.6 2.6 0 1 1 4.2 2c-1 .7-1.7 1.2-1.7 2.5M12 17h.01"></path>
-                    </svg>
-                </span>
-                <div><strong>Need assistance?</strong>
-                    <p>Visit Room AV-104 or call ext. 2140 during office hours.</p>
+            @if (auth()->user()->role == 'student')
+                <div class="sidebar-help brand-copy">
+                    <span data-icon="help">
+                        <svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
+                            <circle cx="12" cy="12" r="9"></circle>
+                            <path d="M9.5 9a2.6 2.6 0 1 1 4.2 2c-1 .7-1.7 1.2-1.7 2.5M12 17h.01"></path>
+                        </svg>
+                    </span>
+                    <div><strong>Need assistance?</strong>
+                        <p>Visit Room AV-104 or call ext. 2140 during office hours.</p>
+                    </div>
                 </div>
-            </div>
+            @endif
             <div class="sidebar-user">
                 <span class="avatar" id="sidebar-avatar"
                     style="text-transform: uppercase">{{ substr(auth()->user()->name, 0, 2) }}</span>

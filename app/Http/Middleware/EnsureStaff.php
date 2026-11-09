@@ -15,7 +15,13 @@ class EnsureStaff
      */
     public function handle(Request $request, Closure $next): Response
     {
-        abort_unless(in_array($request->user()?->role, ['staff', 'admin'], true), 403);
+        $user = $request->user();
+
+        abort_unless(
+            in_array($user?->role, ['staff', 'admin'], true)
+                && strtolower((string) $user->status) === 'active',
+            403
+        );
 
         return $next($request);
     }

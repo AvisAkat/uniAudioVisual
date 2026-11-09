@@ -15,7 +15,12 @@ class EnsureStudent
      */
     public function handle(Request $request, Closure $next): Response
     {
-        abort_unless($request->user()?->role === 'student', 403);
+        $user = $request->user();
+
+        abort_unless(
+            $user?->role === 'student' && strtolower((string) $user->status) === 'active',
+            403
+        );
 
         return $next($request);
     }

@@ -62,7 +62,7 @@ class AuthController extends Controller
             ]);
         }
 
-        if (!$created) {
+        if (! $created) {
             return back()->withInput()->with('toast', [
                 'title' => 'Account Creation Failed',
                 'type' => 'error',
@@ -106,6 +106,7 @@ class AuthController extends Controller
         $creds = [
             $fieldType => $request->login_id,
             'password' => $request->password,
+            'status' => 'active',
         ];
 
         if (Auth::attempt($creds)) {
@@ -130,7 +131,7 @@ class AuthController extends Controller
                 return redirect()->route('student.dashboard')->with('toast', [
                     'title' => 'Login Successful',
                     'type' => 'success',
-                    'message' => 'Welcome back, ' . Auth::user()->name . '!',
+                    'message' => 'Welcome back, '.Auth::user()->name.'!',
                 ]);
             }
 
@@ -139,7 +140,7 @@ class AuthController extends Controller
                 return redirect()->route('staff.dashboard')->with('toast', [
                     'title' => 'Login Successful',
                     'type' => 'success',
-                    'message' => 'Welcome back, ' . Auth::user()->name . '!',
+                    'message' => 'Welcome back, '.Auth::user()->name.'!',
                 ]);
             }
 
@@ -148,7 +149,7 @@ class AuthController extends Controller
                 return redirect()->route('admin.dashboard')->with('toast', [
                     'title' => 'Login Successful',
                     'type' => 'success',
-                    'message' => 'Welcome back, ' . Auth::user()->name . '!',
+                    'message' => 'Welcome back, '.Auth::user()->name.'!',
                 ]);
             }
 
@@ -156,7 +157,7 @@ class AuthController extends Controller
             return redirect()->route('student.dashboard')->with('toast', [
                 'title' => 'Login Successful',
                 'type' => 'success',
-                'message' => 'Welcome back, ' . Auth::user()->name . '!',
+                'message' => 'Welcome back, '.Auth::user()->name.'!',
             ]);
 
         } else {
