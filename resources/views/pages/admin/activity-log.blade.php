@@ -2,6 +2,6 @@
 @section('pageTitle', isset($pageTitle) ? $pageTitle : 'AVBMS | University Audio Visual Department')
 @section('content')
     
-    -- Activity Log --
+    @livewire('admin.activity-logs')
 
 @endsection
