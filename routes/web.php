@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
 
     //Admin Routes
     Route::prefix('admin')->name('admin.')->middleware('admin')->controller(AdminController::class)->group(function () {
+        Route::get('/dashboard', 'showDashboard')->name('dashboard');
         Route::get('/manage-users', 'manageUsers')->name('manage_users');
         Route::get('/activity-log', 'activityLog')->name('activity_log');
         Route::get('/system-settings', 'systemSettings')->name('system_settings');

@@ -63,8 +63,8 @@
                     <div class="nav-group">
                         <span class="nav-group-label brand-copy">Workspace</span>
                         <a href="{{ route('student.dashboard') }}">
-                            <button class="nav-item {{ Route::Is('student.dashboard') ? 'is-active' : '' }}" type="button" data-view="overview" data-roles="student"
-                                aria-current="page">
+                            <button class="nav-item {{ Route::Is('student.dashboard') ? 'is-active' : '' }}" type="button"
+                                data-view="overview" data-roles="student" aria-current="page">
                                 <span class="nav-icon" data-icon="dashboard">
                                     <svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
                                         <rect x="3" y="3" width="7" height="7" rx="2"></rect>
@@ -77,7 +77,8 @@
                             </button>
                         </a>
                         <a href="{{ route('student.browse_equipment') }}">
-                            <button class="nav-item {{ Route::Is('student.browse_equipment') ? 'is-active' : '' }}" type="button" data-view="equipment" data-roles="student">
+                            <button class="nav-item {{ Route::Is('student.browse_equipment') ? 'is-active' : '' }}"
+                                type="button" data-view="equipment" data-roles="student">
                                 <span class="nav-icon" data-icon="monitor">
                                     <svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
                                         <rect x="3" y="4" width="18" height="13" rx="2"></rect>
@@ -88,7 +89,8 @@
                             </button>
                         </a>
                         <a href="{{ route('student.check_availability') }}">
-                            <button class="nav-item {{ Route::Is('student.check_availability') ? 'is-active' : '' }}" type="button" data-view="availability" data-roles="student">
+                            <button class="nav-item {{ Route::Is('student.check_availability') ? 'is-active' : '' }}"
+                                type="button" data-view="availability" data-roles="student">
                                 <span class="nav-icon" data-icon="calendar">
                                     <svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
                                         <rect x="3" y="5" width="18" height="16" rx="2"></rect>
@@ -100,7 +102,8 @@
                             </button>
                         </a>
                         <a href="{{ route('student.my_bookings') }}">
-                            <button class="nav-item {{ Route::Is('student.my_bookings') ? 'is-active' : '' }}"" type="button" data-view="my-bookings" data-roles="student">
+                            <button class="nav-item {{ Route::Is('student.my_bookings') ? 'is-active' : '' }}"" type="
+                                button" data-view="my-bookings" data-roles="student">
                                 <span class="nav-icon" data-icon="clipboard">
                                     <svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
                                         <rect x="5" y="4" width="14" height="17" rx="2"></rect>
@@ -116,20 +119,37 @@
                 @if (in_array(auth()->user()->role, ['staff', 'admin'], true))
                     <div class="nav-group">
                         <span class="nav-group-label brand-copy">Workspace</span>
-                        <a href="{{ route('staff.dashboard') }}">
-                            <button class="nav-item {{ Route::Is('staff.dashboard') ? 'is-active' : '' }}" type="button"
-                                data-view="overview" data-roles="staff,admin" aria-current="page">
-                                <span class="nav-icon" data-icon="dashboard">
-                                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
-                                        <rect x="3" y="3" width="7" height="7" rx="2"></rect>
-                                        <rect x="14" y="3" width="7" height="7" rx="2"></rect>
-                                        <rect x="3" y="14" width="7" height="7" rx="2"></rect>
-                                        <rect x="14" y="14" width="7" height="7" rx="2"></rect>
-                                    </svg>
-                                </span>
-                                <span class="nav-label">Dashboard</span>
-                            </button>
-                        </a>
+                        @if (auth()->user()->role == 'admin')
+                            <a href="{{ route('admin.dashboard') }}">
+                                <button class="nav-item {{ Route::Is('admin.dashboard') ? 'is-active' : '' }}" type="button"
+                                    data-view="overview" data-roles="admin" aria-current="page">
+                                    <span class="nav-icon" data-icon="dashboard">
+                                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                                            <rect x="3" y="3" width="7" height="7" rx="2"></rect>
+                                            <rect x="14" y="3" width="7" height="7" rx="2"></rect>
+                                            <rect x="3" y="14" width="7" height="7" rx="2"></rect>
+                                            <rect x="14" y="14" width="7" height="7" rx="2"></rect>
+                                        </svg>
+                                    </span>
+                                    <span class="nav-label">Dashboard</span>
+                                </button>
+                            </a>
+                        @else
+                            <a href="{{ route('staff.dashboard') }}">
+                                <button class="nav-item {{ Route::Is('staff.dashboard') ? 'is-active' : '' }}" type="button"
+                                    data-view="overview" data-roles="staff" aria-current="page">
+                                    <span class="nav-icon" data-icon="dashboard">
+                                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                                            <rect x="3" y="3" width="7" height="7" rx="2"></rect>
+                                            <rect x="14" y="3" width="7" height="7" rx="2"></rect>
+                                            <rect x="3" y="14" width="7" height="7" rx="2"></rect>
+                                            <rect x="14" y="14" width="7" height="7" rx="2"></rect>
+                                        </svg>
+                                    </span>
+                                    <span class="nav-label">Dashboard</span>
+                                </button>
+                            </a>
+                        @endif
 
                     </div>
                     <div class="nav-group" data-staff-nav="">
@@ -183,22 +203,22 @@
                             </button>
                         </a>
                         @if (auth()->user()->role == 'admin')
-                    
-                        <a href="{{ route('admin.activity_log') }}">
-                            <button class="nav-item {{ Route::Is('staff.activity_log') ? 'is-active' : '' }}" type="button"
-                            data-view="activity" data-roles="staff,admin">
-                            <span class="nav-icon" data-icon="activity">
-                                <svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M3 12h4l2-7 4 14 2-7h6"></path>
-                                </svg>
-                            </span>
-                            <span class="nav-label">Activity Log</span>
-                        </button>
-                    </a>
-                    @endif
+
+                            <a href="{{ route('admin.activity_log') }}">
+                                <button class="nav-item {{ Route::Is('staff.activity_log') ? 'is-active' : '' }}" type="button"
+                                    data-view="activity" data-roles="staff,admin">
+                                    <span class="nav-icon" data-icon="activity">
+                                        <svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M3 12h4l2-7 4 14 2-7h6"></path>
+                                        </svg>
+                                    </span>
+                                    <span class="nav-label">Activity Log</span>
+                                </button>
+                            </a>
+                        @endif
                     </div>
                 @endif
-                
+
             </nav>
             <div class="sidebar-help brand-copy">
                 <span data-icon="help">

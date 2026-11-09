@@ -62,7 +62,7 @@ class AuthController extends Controller
             ]);
         }
 
-        if (! $created) {
+        if (!$created) {
             return back()->withInput()->with('toast', [
                 'title' => 'Account Creation Failed',
                 'type' => 'error',
@@ -130,16 +130,25 @@ class AuthController extends Controller
                 return redirect()->route('student.dashboard')->with('toast', [
                     'title' => 'Login Successful',
                     'type' => 'success',
-                    'message' => 'Welcome back, '.Auth::user()->name.'!',
+                    'message' => 'Welcome back, ' . Auth::user()->name . '!',
                 ]);
             }
 
-            // Staff and admins share the department management workspace.
-            if (in_array($user->role, ['staff', 'admin'], true)) {
+            // Staff dasboard
+            if (in_array($user->role, ['staff'], true)) {
                 return redirect()->route('staff.dashboard')->with('toast', [
                     'title' => 'Login Successful',
                     'type' => 'success',
-                    'message' => 'Welcome back, '.Auth::user()->name.'!',
+                    'message' => 'Welcome back, ' . Auth::user()->name . '!',
+                ]);
+            }
+
+            // redirect the admin dashboard if the user is a student
+            if ($user->role == 'admin') {
+                return redirect()->route('admin.dashboard')->with('toast', [
+                    'title' => 'Login Successful',
+                    'type' => 'success',
+                    'message' => 'Welcome back, ' . Auth::user()->name . '!',
                 ]);
             }
 
@@ -147,7 +156,7 @@ class AuthController extends Controller
             return redirect()->route('student.dashboard')->with('toast', [
                 'title' => 'Login Successful',
                 'type' => 'success',
-                'message' => 'Welcome back, '.Auth::user()->name.'!',
+                'message' => 'Welcome back, ' . Auth::user()->name . '!',
             ]);
 
         } else {
