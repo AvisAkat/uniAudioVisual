@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ActivityLog;
 use App\Models\Booking;
 use App\Models\Equipment;
 use Illuminate\Database\Eloquent\Builder;
@@ -7,10 +8,11 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
-use Livewire\Component;
 use Livewire\Attributes\Computed;
+use Livewire\Component;
 
-new class extends Component {
+new class extends Component
+{
     public string $search = '';
 
     public string $categoryFilter = 'All';
@@ -41,7 +43,7 @@ new class extends Component {
     {
         return Equipment::query()
             ->when($this->search !== '', function (Builder $query): void {
-                $searchTerm = '%' . $this->search . '%';
+                $searchTerm = '%'.$this->search.'%';
 
                 $query->where(function (Builder $query) use ($searchTerm): void {
                     $query->where('name', 'like', $searchTerm)
@@ -49,7 +51,7 @@ new class extends Component {
                         ->orWhere('asset_code', 'like', $searchTerm);
                 });
             })
-            ->when($this->categoryFilter !== 'All', fn(Builder $query) => $query->where('category', $this->categoryFilter))
+            ->when($this->categoryFilter !== 'All', fn (Builder $query) => $query->where('category', $this->categoryFilter))
             ->orderBy('name')
             ->get();
     }
@@ -198,7 +200,7 @@ new class extends Component {
                 return "Only {$available} unit(s) are available for this date and time slot.";
             }
 
-            Booking::query()->create([
+            $booking = Booking::query()->create([
                 'user_id' => auth()->id(),
                 'equipment_id' => $equipment->id,
                 'booking_date' => $validated['bookingDate'],
@@ -209,6 +211,13 @@ new class extends Component {
                 'additional_notes' => $validated['bookingNotes'] ?: null,
                 'status' => 'Pending',
             ]);
+
+            ActivityLog::record(
+                'Booking submitted',
+                'Booking',
+                "Submitted a request for {$booking->quantity} × {$equipment->name} on {$validated['bookingDate']} ({$slot['label']}).",
+                $booking,
+            );
 
             return null;
         });

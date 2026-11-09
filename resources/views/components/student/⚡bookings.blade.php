@@ -1,14 +1,16 @@
 <?php
 
+use App\Models\ActivityLog;
 use App\Models\Booking;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
-new class extends Component {
+new class extends Component
+{
     public string $search = '';
 
     public string $statusFilter = 'All';
@@ -34,7 +36,7 @@ new class extends Component {
         $searchTerm = Str::lower(trim($this->search));
 
         $bookings = $this->allBookings
-            ->when($this->statusFilter !== 'All', fn(Collection $bookings) => $bookings->where('status', $this->statusFilter))
+            ->when($this->statusFilter !== 'All', fn (Collection $bookings) => $bookings->where('status', $this->statusFilter))
             ->when($searchTerm !== '', function (Collection $bookings) use ($searchTerm): Collection {
                 return $bookings->filter(function (Booking $booking) use ($searchTerm): bool {
                     return Str::contains(Str::lower($this->bookingReference($booking)), $searchTerm)
@@ -45,8 +47,8 @@ new class extends Component {
 
         return match ($this->sortBy) {
             'oldest' => $bookings->sortBy('created_at')->values(),
-            'date-asc' => $bookings->sortBy(fn(Booking $booking) => $booking->booking_date->timestamp)->values(),
-            'date-desc' => $bookings->sortByDesc(fn(Booking $booking) => $booking->booking_date->timestamp)->values(),
+            'date-asc' => $bookings->sortBy(fn (Booking $booking) => $booking->booking_date->timestamp)->values(),
+            'date-desc' => $bookings->sortByDesc(fn (Booking $booking) => $booking->booking_date->timestamp)->values(),
             'status' => $bookings->sortBy('status')->values(),
             default => $bookings->sortByDesc('created_at')->values(),
         };
@@ -89,7 +91,7 @@ new class extends Component {
 
         $booking = $this->studentBookings()->findOrFail($bookingId);
 
-        if (!$this->isCancellable($booking)) {
+        if (! $this->isCancellable($booking)) {
             $this->dispatch(
                 'toast',
                 title: 'Booking cannot be cancelled',
@@ -124,16 +126,27 @@ new class extends Component {
                 ->lockForUpdate()
                 ->findOrFail($this->cancellingBookingId);
 
-            if (!$this->isCancellable($booking)) {
+            if (! $this->isCancellable($booking)) {
                 return false;
             }
 
             $booking->status = 'Cancelled';
 
-            return $booking->save();
+            if (! $booking->save()) {
+                return false;
+            }
+
+            ActivityLog::record(
+                'Booking cancelled',
+                'Booking',
+                'Cancelled booking '.$this->bookingReference($booking).'.',
+                $booking,
+            );
+
+            return true;
         });
 
-        if (!$cancelled) {
+        if (! $cancelled) {
             $this->dispatch(
                 'toast',
                 title: 'Booking cannot be cancelled',
@@ -178,12 +191,12 @@ new class extends Component {
 
     public function isCancellable(Booking $booking): bool
     {
-        if (!in_array($booking->status, ['Pending', 'Approved'], true)) {
+        if (! in_array($booking->status, ['Pending', 'Approved'], true)) {
             return false;
         }
 
         $startsAt = Carbon::parse(
-            Carbon::parse($booking->booking_date)->toDateString() . ' ' . $booking->start_time
+            Carbon::parse($booking->booking_date)->toDateString().' '.$booking->start_time
         );
 
         return $startsAt->isFuture();
@@ -191,14 +204,14 @@ new class extends Component {
 
     public function bookingReference(Booking $booking): string
     {
-        return 'AVB-' . Carbon::parse($booking->booking_date)->format('ymd') . '-' . str_pad((string) $booking->id, 4, '0', STR_PAD_LEFT);
+        return 'AVB-'.Carbon::parse($booking->booking_date)->format('ymd').'-'.str_pad((string) $booking->id, 4, '0', STR_PAD_LEFT);
     }
 
     public function formattedTimeSlot(Booking $booking): string
     {
         return Carbon::parse($booking->start_time)->format('g:i A')
-            . ' – '
-            . Carbon::parse($booking->end_time)->format('g:i A');
+            .' – '
+            .Carbon::parse($booking->end_time)->format('g:i A');
     }
 };
 ?>

@@ -2,13 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
-use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
@@ -34,12 +36,24 @@ class AuthController extends Controller
         ]);
 
         try {
-            $created = User::create([
-                'name' => $validated['name'],
-                'university_id' => $validated['university_id'],
-                'email' => $validated['email'],
-                'password' => $validated['password'],
-            ]);
+            $created = DB::transaction(function () use ($validated): User {
+                $user = User::create([
+                    'name' => $validated['name'],
+                    'university_id' => $validated['university_id'],
+                    'email' => $validated['email'],
+                    'password' => $validated['password'],
+                ]);
+
+                ActivityLog::record(
+                    'User registered',
+                    'Authentication',
+                    'Created a student account.',
+                    $user,
+                    $user,
+                );
+
+                return $user;
+            });
         } catch (\Exception $e) {
             return back()->withInput()->with('toast', [
                 'title' => 'Account Creation Failed',
@@ -48,7 +62,7 @@ class AuthController extends Controller
             ]);
         }
 
-        if(!$created) {
+        if (! $created) {
             return back()->withInput()->with('toast', [
                 'title' => 'Account Creation Failed',
                 'type' => 'error',
@@ -102,8 +116,17 @@ class AuthController extends Controller
                 $user = User::where('university_id', $request->login_id)->first();
             }
 
+            ActivityLog::record(
+                'User signed in',
+                'Authentication',
+                "Signed in to the {$user->role} workspace.",
+                $user,
+                $user,
+                $request,
+            );
+
             // redirect the student dashboard if the user is a student
-            if($user->role == 'student') {
+            if ($user->role == 'student') {
                 return redirect()->route('student.dashboard')->with('toast', [
                     'title' => 'Login Successful',
                     'type' => 'success',
@@ -112,7 +135,7 @@ class AuthController extends Controller
             }
 
             // Staff and admins share the department management workspace.
-            if(in_array($user->role, ['staff', 'admin'], true)) {
+            if (in_array($user->role, ['staff', 'admin'], true)) {
                 return redirect()->route('staff.dashboard')->with('toast', [
                     'title' => 'Login Successful',
                     'type' => 'success',
@@ -124,7 +147,7 @@ class AuthController extends Controller
             return redirect()->route('student.dashboard')->with('toast', [
                 'title' => 'Login Successful',
                 'type' => 'success',
-                'message' => 'Welcome back, ' . Auth::user()->name . '!',
+                'message' => 'Welcome back, '.Auth::user()->name.'!',
             ]);
 
         } else {
@@ -138,6 +161,19 @@ class AuthController extends Controller
 
     public function logout(Request $request): RedirectResponse
     {
+        $user = Auth::user();
+
+        if ($user instanceof User) {
+            ActivityLog::record(
+                'User signed out',
+                'Authentication',
+                'Signed out of AVBMS.',
+                $user,
+                $user,
+                $request,
+            );
+        }
+
         Auth::logout();
 
         $request->session()->invalidate();

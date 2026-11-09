@@ -1,291 +1,322 @@
 <?php
 
-use Livewire\Component;
+use App\Models\ActivityLog;
 use App\Models\Equipment;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
+use Livewire\Component;
 
-new class extends Component {
-  const loaderActions = [
-    "saveEquipment",
-  ];
-
-  public bool $showModal = false;
-
-  public ?int $editingEquipmentId = null;
-
-  public ?int $viewingEquipmentId = null;
-
-  public ?int $deletingEquipmentId = null;
-
-  public string $name = '';
-
-  public string $category = 'Projectors';
-
-  public int $totalQuantity = 1;
-
-  public string $condition = 'Good';
-
-  public string $description = '';
-
-  public string $search = '';
-
-  public string $categoryFilter = 'All';
-
-  public string $conditionFilter = 'All';
-
-  public string $stockDate = '';
-
-  public string $stockSlot = 'slot-1';
-
-  public function mount(): void
-  {
-    $this->stockDate = now()->toDateString();
-  }
-
-  #[Computed]
-  public function equipmentItems(): Collection
-  {
-    return Equipment::query()
-      ->when($this->search !== '', function (Builder $query): void {
-        $searchTerm = '%' . $this->search . '%';
-
-        $query->where(function (Builder $query) use ($searchTerm): void {
-          $query->where('name', 'like', $searchTerm)
-            ->orWhere('description', 'like', $searchTerm)
-            ->orWhere('asset_code', 'like', $searchTerm);
-        });
-      })
-      ->when($this->categoryFilter !== 'All', fn(Builder $query) => $query->where('category', $this->categoryFilter))
-      ->when($this->conditionFilter !== 'All', fn(Builder $query) => $query->where('condition', $this->conditionFilter))
-      ->orderBy('name')
-      ->get();
-  }
-
-  #[Computed]
-  public function stockSlots(): array
-  {
-    return [
-      'slot-1' => '7:30 AM – 10:30 AM',
-      'slot-2' => '11:00 AM – 2:00 PM',
-      'slot-3' => '2:15 PM – 5:15 PM',
+new class extends Component
+{
+    const loaderActions = [
+        'saveEquipment',
     ];
-  }
 
-  #[Computed]
-  public function selectedStockSlot(): string
-  {
-    return $this->stockSlots[$this->stockSlot] ?? $this->stockSlots['slot-1'];
-  }
+    public bool $showModal = false;
 
-  public function resetFilters(): void
-  {
-    $this->reset('search', 'categoryFilter', 'conditionFilter');
-    $this->stockDate = now()->toDateString();
-    $this->stockSlot = 'slot-1';
-    unset($this->equipmentItems, $this->selectedStockSlot);
-  }
+    public ?int $editingEquipmentId = null;
 
-  public function openCreateModal(): void
-  {
-    $this->authorizeStaff();
-    $this->resetForm();
-    $this->showModal = true;
-  }
+    public ?int $viewingEquipmentId = null;
 
-  public function editEquipment(int $equipmentId): void
-  {
-    $this->authorizeStaff();
+    public ?int $deletingEquipmentId = null;
 
-    $equipment = Equipment::query()->findOrFail($equipmentId);
+    public string $name = '';
 
-    $this->editingEquipmentId = $equipment->id;
-    $this->name = $equipment->name;
-    $this->category = $equipment->category;
-    $this->totalQuantity = $equipment->total_quantity;
-    $this->condition = $equipment->condition;
-    $this->description = $equipment->description ?? '';
-    $this->resetValidation();
-    $this->showModal = true;
-  }
+    public string $category = 'Projectors';
 
-  public function viewEquipment(int $equipmentId): void
-  {
-    $this->authorizeStaff();
+    public int $totalQuantity = 1;
 
-    $equipment = Equipment::query()->findOrFail($equipmentId);
-    $this->viewingEquipmentId = $equipment->id;
-    unset($this->viewedEquipment);
-  }
+    public string $condition = 'Good';
 
-  #[Computed]
-  public function viewedEquipment(): ?Equipment
-  {
-    return $this->viewingEquipmentId === null
-      ? null
-      : Equipment::query()->find($this->viewingEquipmentId);
-  }
+    public string $description = '';
 
-  public function closeEquipmentView(): void
-  {
-    $this->viewingEquipmentId = null;
-    unset($this->viewedEquipment);
-  }
+    public string $search = '';
 
-  public function openDeleteEquipment(int $equipmentId): void
-  {
-    $this->authorizeStaff();
+    public string $categoryFilter = 'All';
 
-    Equipment::query()->findOrFail($equipmentId);
+    public string $conditionFilter = 'All';
 
-    $this->deletingEquipmentId = $equipmentId;
-    unset($this->equipmentToDelete);
-  }
+    public string $stockDate = '';
 
-  #[Computed]
-  public function equipmentToDelete(): ?Equipment
-  {
-    return $this->deletingEquipmentId === null
-      ? null
-      : Equipment::query()->find($this->deletingEquipmentId);
-  }
+    public string $stockSlot = 'slot-1';
 
-  public function closeDeleteModal(): void
-  {
-    $this->deletingEquipmentId = null;
-    unset($this->equipmentToDelete);
-  }
-
-  public function deleteEquipment(): void
-  {
-    $this->authorizeStaff();
-
-    $equipment = $this->equipmentToDelete;
-
-    if ($equipment === null) {
-      $this->closeDeleteModal();
-
-      return;
+    public function mount(): void
+    {
+        $this->stockDate = now()->toDateString();
     }
 
-    $equipmentName = $equipment->name;
+    #[Computed]
+    public function equipmentItems(): Collection
+    {
+        return Equipment::query()
+            ->when($this->search !== '', function (Builder $query): void {
+                $searchTerm = '%'.$this->search.'%';
 
-    $deleted = $equipment->delete();
-
-    if (!$deleted) {
-      $this->dispatch(
-        'toast',
-        title: 'Something went wrong',
-        message: 'Unable to remove the equipment item. Please try again later.',
-        type: 'error'
-      );
-
-      return;
+                $query->where(function (Builder $query) use ($searchTerm): void {
+                    $query->where('name', 'like', $searchTerm)
+                        ->orWhere('description', 'like', $searchTerm)
+                        ->orWhere('asset_code', 'like', $searchTerm);
+                });
+            })
+            ->when($this->categoryFilter !== 'All', fn (Builder $query) => $query->where('category', $this->categoryFilter))
+            ->when($this->conditionFilter !== 'All', fn (Builder $query) => $query->where('condition', $this->conditionFilter))
+            ->orderBy('name')
+            ->get();
     }
 
-    $this->closeDeleteModal();
-    unset($this->equipmentItems);
-
-    $this->dispatch(
-      'toast',
-      title: 'Equipment removed',
-      message: "$equipmentName has been removed from the inventory.",
-      type: 'success'
-    );
-  }
-
-  public function saveEquipment(): void
-  {
-    $this->authorizeStaff();
-
-    $validated = $this->validate([
-      'name' => ['required', 'string', 'max:255'],
-      'category' => ['required', 'string', Rule::in(['Projectors', 'HDMI Cables', 'Extension Boards', 'Audio Systems'])],
-      'totalQuantity' => ['required', 'integer', 'min:0'],
-      'condition' => ['required', 'string', Rule::in(['Good', 'Under Maintenance', 'Damaged'])],
-      'description' => ['required', 'string', 'max:2000'],
-    ]);
-
-    $this->editingEquipmentId === null
-      ? $isEdit = false
-      : $isEdit = true;
-
-    $equipment = $this->editingEquipmentId === null
-      ? new Equipment()
-      : Equipment::query()->findOrFail($this->editingEquipmentId);
-
-    $reservedQuantity = $equipment->exists
-      ? max(0, $equipment->total_quantity - $equipment->available_quantity)
-      : 0;
-    $newTotalQuantity = (int) $validated['totalQuantity'];
-
-    if ($newTotalQuantity < $reservedQuantity) {
-      $this->addError('totalQuantity', "Total quantity cannot be less than the {$reservedQuantity} currently reserved units.");
-
-      return;
+    #[Computed]
+    public function stockSlots(): array
+    {
+        return [
+            'slot-1' => '7:30 AM – 10:30 AM',
+            'slot-2' => '11:00 AM – 2:00 PM',
+            'slot-3' => '2:15 PM – 5:15 PM',
+        ];
     }
 
-    $equipment->fill([
-      'name' => $validated['name'],
-      'category' => $validated['category'],
-      'description' => $validated['description'],
-      'total_quantity' => $newTotalQuantity,
-      'available_quantity' => $newTotalQuantity - $reservedQuantity,
-      'condition' => $validated['condition'],
-    ]);
-
-    if (!$equipment->exists) {
-      $equipment->asset_code = 'EQ-' . Str::upper(Str::random(10));
+    #[Computed]
+    public function selectedStockSlot(): string
+    {
+        return $this->stockSlots[$this->stockSlot] ?? $this->stockSlots['slot-1'];
     }
 
-    $saved = $equipment->save();
-
-    if (!$saved) {
-      $this->dispatch(
-        'toast',
-        title: 'Something went wrong',
-        message: 'Unable to save the equipment item. Please try again later.',
-        type: 'error'
-      );
-
-      return;
-    } else {
-      $this->resetForm();
-      $this->showModal = false;
-      unset($this->equipmentItems);
-
-      $this->dispatch(
-        'toast',
-        title: 'Success',
-        message: !$isEdit
-        ? 'New equipment item has been added to the inventory.'
-        : 'Equipment item has been updated successfully.',
-        type: 'success'
-      );
+    public function resetFilters(): void
+    {
+        $this->reset('search', 'categoryFilter', 'conditionFilter');
+        $this->stockDate = now()->toDateString();
+        $this->stockSlot = 'slot-1';
+        unset($this->equipmentItems, $this->selectedStockSlot);
     }
 
-  }
+    public function openCreateModal(): void
+    {
+        $this->authorizeStaff();
+        $this->resetForm();
+        $this->showModal = true;
+    }
 
-  public function closeModal(): void
-  {
-    $this->resetForm();
-    $this->showModal = false;
-  }
+    public function editEquipment(int $equipmentId): void
+    {
+        $this->authorizeStaff();
 
-  private function resetForm(): void
-  {
-    $this->reset('editingEquipmentId', 'name', 'totalQuantity', 'condition', 'description');
-    $this->category = 'Projectors';
-    $this->resetValidation();
-  }
+        $equipment = Equipment::query()->findOrFail($equipmentId);
 
-  private function authorizeStaff(): void
-  {
-    abort_unless(in_array(auth()->user()?->role, ['staff', 'admin'], true), 403);
-  }
+        $this->editingEquipmentId = $equipment->id;
+        $this->name = $equipment->name;
+        $this->category = $equipment->category;
+        $this->totalQuantity = $equipment->total_quantity;
+        $this->condition = $equipment->condition;
+        $this->description = $equipment->description ?? '';
+        $this->resetValidation();
+        $this->showModal = true;
+    }
+
+    public function viewEquipment(int $equipmentId): void
+    {
+        $this->authorizeStaff();
+
+        $equipment = Equipment::query()->findOrFail($equipmentId);
+        $this->viewingEquipmentId = $equipment->id;
+        unset($this->viewedEquipment);
+    }
+
+    #[Computed]
+    public function viewedEquipment(): ?Equipment
+    {
+        return $this->viewingEquipmentId === null
+          ? null
+          : Equipment::query()->find($this->viewingEquipmentId);
+    }
+
+    public function closeEquipmentView(): void
+    {
+        $this->viewingEquipmentId = null;
+        unset($this->viewedEquipment);
+    }
+
+    public function openDeleteEquipment(int $equipmentId): void
+    {
+        $this->authorizeStaff();
+
+        Equipment::query()->findOrFail($equipmentId);
+
+        $this->deletingEquipmentId = $equipmentId;
+        unset($this->equipmentToDelete);
+    }
+
+    #[Computed]
+    public function equipmentToDelete(): ?Equipment
+    {
+        return $this->deletingEquipmentId === null
+          ? null
+          : Equipment::query()->find($this->deletingEquipmentId);
+    }
+
+    public function closeDeleteModal(): void
+    {
+        $this->deletingEquipmentId = null;
+        unset($this->equipmentToDelete);
+    }
+
+    public function deleteEquipment(): void
+    {
+        $this->authorizeStaff();
+
+        $equipment = $this->equipmentToDelete;
+
+        if ($equipment === null) {
+            $this->closeDeleteModal();
+
+            return;
+        }
+
+        $equipmentName = $equipment->name;
+
+        $deleted = DB::transaction(function () use ($equipment): bool {
+            if (! $equipment->delete()) {
+                return false;
+            }
+
+            ActivityLog::record(
+                'Equipment deleted',
+                'Equipment',
+                "Removed {$equipment->name} ({$equipment->asset_code}) from inventory.",
+                $equipment,
+            );
+
+            return true;
+        });
+
+        if (! $deleted) {
+            $this->dispatch(
+                'toast',
+                title: 'Something went wrong',
+                message: 'Unable to remove the equipment item. Please try again later.',
+                type: 'error'
+            );
+
+            return;
+        }
+
+        $this->closeDeleteModal();
+        unset($this->equipmentItems);
+
+        $this->dispatch(
+            'toast',
+            title: 'Equipment removed',
+            message: "$equipmentName has been removed from the inventory.",
+            type: 'success'
+        );
+    }
+
+    public function saveEquipment(): void
+    {
+        $this->authorizeStaff();
+
+        $validated = $this->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'category' => ['required', 'string', Rule::in(['Projectors', 'HDMI Cables', 'Extension Boards', 'Audio Systems'])],
+            'totalQuantity' => ['required', 'integer', 'min:0'],
+            'condition' => ['required', 'string', Rule::in(['Good', 'Under Maintenance', 'Damaged'])],
+            'description' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $this->editingEquipmentId === null
+          ? $isEdit = false
+          : $isEdit = true;
+
+        $equipment = $this->editingEquipmentId === null
+          ? new Equipment
+          : Equipment::query()->findOrFail($this->editingEquipmentId);
+
+        $reservedQuantity = $equipment->exists
+          ? max(0, $equipment->total_quantity - $equipment->available_quantity)
+          : 0;
+        $newTotalQuantity = (int) $validated['totalQuantity'];
+
+        if ($newTotalQuantity < $reservedQuantity) {
+            $this->addError('totalQuantity', "Total quantity cannot be less than the {$reservedQuantity} currently reserved units.");
+
+            return;
+        }
+
+        $equipment->fill([
+            'name' => $validated['name'],
+            'category' => $validated['category'],
+            'description' => $validated['description'],
+            'total_quantity' => $newTotalQuantity,
+            'available_quantity' => $newTotalQuantity - $reservedQuantity,
+            'condition' => $validated['condition'],
+        ]);
+
+        if (! $equipment->exists) {
+            $equipment->asset_code = 'EQ-'.Str::upper(Str::random(10));
+        }
+
+        $saved = DB::transaction(function () use ($equipment, $isEdit, $newTotalQuantity): bool {
+            if (! $equipment->save()) {
+                return false;
+            }
+
+            ActivityLog::record(
+                $isEdit ? 'Equipment updated' : 'Equipment created',
+                'Equipment',
+                $isEdit
+                  ? "Updated {$equipment->name}; total quantity is {$newTotalQuantity} and condition is {$equipment->condition}."
+                  : "Added {$equipment->name} ({$equipment->category}) with {$newTotalQuantity} unit(s).",
+                $equipment,
+            );
+
+            return true;
+        });
+
+        if (! $saved) {
+            $this->dispatch(
+                'toast',
+                title: 'Something went wrong',
+                message: 'Unable to save the equipment item. Please try again later.',
+                type: 'error'
+            );
+
+            return;
+        } else {
+            $this->resetForm();
+            $this->showModal = false;
+            unset($this->equipmentItems);
+
+            $this->dispatch(
+                'toast',
+                title: 'Success',
+                message: ! $isEdit
+                ? 'New equipment item has been added to the inventory.'
+                : 'Equipment item has been updated successfully.',
+                type: 'success'
+            );
+        }
+
+    }
+
+    public function closeModal(): void
+    {
+        $this->resetForm();
+        $this->showModal = false;
+    }
+
+    private function resetForm(): void
+    {
+        $this->reset('editingEquipmentId', 'name', 'totalQuantity', 'condition', 'description');
+        $this->category = 'Projectors';
+        $this->resetValidation();
+    }
+
+    private function authorizeStaff(): void
+    {
+        abort_unless(in_array(auth()->user()?->role, ['staff', 'admin'], true), 403);
+    }
 };
 ?>
 

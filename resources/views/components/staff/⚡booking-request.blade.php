@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ActivityLog;
 use App\Models\Booking;
 use App\Models\Equipment;
 use App\Models\User;
@@ -12,7 +13,8 @@ use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-new class extends Component {
+new class extends Component
+{
     use WithPagination;
 
     private const STATUSES = ['Pending', 'Approved', 'Rejected', 'Cancelled', 'Completed', 'Expired'];
@@ -268,6 +270,13 @@ new class extends Component {
                     'rejection_reason' => $validated['rejectionReason'],
                 ]);
 
+                ActivityLog::record(
+                    'Booking rejected',
+                    'Booking',
+                    'Rejected booking '.$this->bookingReference($booking).'.',
+                    $booking,
+                );
+
                 return ['status' => 'Rejected'];
             }
 
@@ -306,6 +315,13 @@ new class extends Component {
                 'status' => 'Approved',
                 'rejection_reason' => null,
             ]);
+
+            ActivityLog::record(
+                'Booking approved',
+                'Booking',
+                'Approved booking '.$this->bookingReference($booking).'.',
+                $booking,
+            );
 
             return ['status' => 'Approved'];
         });
@@ -351,6 +367,13 @@ new class extends Component {
                 'returned_at' => now(),
             ]);
 
+            ActivityLog::record(
+                'Booking completed',
+                'Booking',
+                'Completed and returned booking '.$this->bookingReference($booking).'.',
+                $booking,
+            );
+
             return true;
         });
 
@@ -367,7 +390,7 @@ new class extends Component {
 
     public function bookingReference(Booking $booking): string
     {
-        return 'AVB-' . Carbon::parse($booking->booking_date)->format('ymd') . '-' . str_pad((string) $booking->id, 4, '0', STR_PAD_LEFT);
+        return 'AVB-'.Carbon::parse($booking->booking_date)->format('ymd').'-'.str_pad((string) $booking->id, 4, '0', STR_PAD_LEFT);
     }
 
     public function formattedTime(string $time): string
@@ -377,7 +400,7 @@ new class extends Component {
 
     public function statusClass(string $status): string
     {
-        return 'status-' . strtolower($status);
+        return 'status-'.strtolower($status);
     }
 
     private function bookingQuery(): Builder
@@ -396,7 +419,7 @@ new class extends Component {
             ->when($this->scheduleFilter === 'past', fn (Builder $query) => $query->whereDate('booking_date', '<', today()))
             ->when(trim($this->search) !== '', function (Builder $query): void {
                 $term = trim($this->search);
-                $likeTerm = '%' . $term . '%';
+                $likeTerm = '%'.$term.'%';
                 preg_match('/(?:^|-)0*(\d+)$/i', $term, $referenceMatch);
 
                 $query->where(function (Builder $query) use ($likeTerm, $referenceMatch): void {

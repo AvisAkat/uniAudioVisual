@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\ActivityLog;
 use App\Models\Booking;
 use App\Models\Equipment;
 use Illuminate\Database\Eloquent\Collection;
@@ -9,7 +10,8 @@ use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
-new class extends Component {
+new class extends Component
+{
     public ?int $equipmentId = null;
 
     public string $availabilityDate = '';
@@ -75,7 +77,7 @@ new class extends Component {
             ->selectRaw('start_time, end_time, SUM(quantity) as reserved_quantity')
             ->groupBy('start_time', 'end_time')
             ->get()
-            ->keyBy(fn (Booking $booking): string => Carbon::parse($booking->start_time)->format('H:i:s') . '|' . Carbon::parse($booking->end_time)->format('H:i:s'));
+            ->keyBy(fn (Booking $booking): string => Carbon::parse($booking->start_time)->format('H:i:s').'|'.Carbon::parse($booking->end_time)->format('H:i:s'));
 
         $bookableTotal = $equipment->condition === 'Good'
             ? min($equipment->total_quantity, $equipment->available_quantity)
@@ -84,7 +86,7 @@ new class extends Component {
         $availability = [];
 
         foreach ($slots as $slotKey => $slot) {
-            $reserved = (int) ($reservedBySlot->get($slot['start'] . '|' . $slot['end'])?->reserved_quantity ?? 0);
+            $reserved = (int) ($reservedBySlot->get($slot['start'].'|'.$slot['end'])?->reserved_quantity ?? 0);
             $available = max(0, $bookableTotal - $reserved);
 
             $availability[$slotKey] = [
@@ -291,7 +293,7 @@ new class extends Component {
                 return "Only {$available} unit(s) are available for this date and slot.";
             }
 
-            Booking::query()->create([
+            $booking = Booking::query()->create([
                 'user_id' => auth()->id(),
                 'equipment_id' => $equipment->id,
                 'booking_date' => $validated['availabilityDate'],
@@ -302,6 +304,13 @@ new class extends Component {
                 'additional_notes' => $validated['bookingNotes'] ?: null,
                 'status' => 'Pending',
             ]);
+
+            ActivityLog::record(
+                'Booking submitted',
+                'Booking',
+                "Submitted a request for {$booking->quantity} × {$equipment->name} on {$validated['availabilityDate']} ({$slot['label']}).",
+                $booking,
+            );
 
             return null;
         });
