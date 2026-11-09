@@ -284,6 +284,7 @@ new class extends Component {
 
         return ActivityLog::query()
             ->with('user')
+            ->where('user_id', auth()->id())
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->limit(5)
@@ -587,7 +588,7 @@ new class extends Component {
                         <div class="card-header">
                             <div class="card-title">
                                 <h2>Recent activity</h2>
-                                <p>Latest department audit events</p>
+                                <p>Your latest audit events</p>
                             </div>
                         </div>
                         <div class="info-list">
@@ -606,7 +607,7 @@ new class extends Component {
                                 <div class="info-list-item">
                                     <div class="info-list-copy">
                                         <strong>No activity recorded yet</strong>
-                                        <p>Recent department changes will appear here.</p>
+                                        <p>Your recent actions will appear here.</p>
                                     </div>
                                 </div>
                             @endforelse

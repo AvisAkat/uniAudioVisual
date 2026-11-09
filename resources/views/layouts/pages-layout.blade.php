@@ -315,7 +315,7 @@
             </main>
             <footer class="app-footer">
                 <span>AVBMS · University Audio Visuals Department</span>
-                <span>Local demonstration database · Data stays in this browser</span>
+                <span>Created by @AvisAkat</span>
             </footer>
         </div>
     </div>
