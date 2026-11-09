@@ -2642,6 +2642,107 @@ html[data-theme="dark"] .category-tab.is-active {
   overflow-x: auto;
 }
 
+.pagination-wrap {
+  margin-top: 14px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.pagination-wrap nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 11px;
+}
+
+.pagination-wrap nav>div:first-child {
+  display: none;
+}
+
+.pagination-wrap nav>div:last-child {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.pagination-wrap nav p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.pagination-wrap nav>div:last-child>div:last-child>span,
+.pagination-wrap nav>div:first-child>span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pagination-wrap nav a,
+.pagination-wrap nav [aria-current="page"]>span,
+.pagination-wrap nav [aria-disabled="true"]>span,
+.pagination-wrap nav>div:first-child>span>* {
+  display: inline-flex;
+  min-width: 34px;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  background: var(--surface);
+  font-size: 11px;
+  line-height: 1;
+  text-decoration: none;
+  transition: color var(--transition), background var(--transition), border-color var(--transition);
+}
+
+.pagination-wrap nav a:hover {
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+  color: var(--primary);
+  background: var(--primary-softer);
+}
+
+.pagination-wrap nav [aria-current="page"]>span {
+  border-color: var(--primary);
+  color: #fff;
+  background: var(--primary);
+  font-weight: 700;
+}
+
+.pagination-wrap nav [aria-disabled="true"]>span {
+  color: var(--muted-light);
+  background: var(--surface-subtle);
+}
+
+.pagination-wrap nav svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 700px) {
+  .pagination-wrap {
+    padding: 12px;
+  }
+
+  .pagination-wrap nav>div:first-child {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .pagination-wrap nav>div:last-child {
+    display: none;
+  }
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
