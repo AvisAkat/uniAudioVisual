@@ -46,6 +46,7 @@ new class extends Component {
     $this->stockDate = now()->toDateString();
   }
 
+  #[Computed]
   public function equipmentItems(): Collection
   {
     return Equipment::query()
@@ -64,6 +65,7 @@ new class extends Component {
       ->get();
   }
 
+  #[Computed]
   public function stockSlots(): array
   {
     return [
@@ -73,6 +75,7 @@ new class extends Component {
     ];
   }
 
+  #[Computed]
   public function selectedStockSlot(): string
   {
     return $this->stockSlots[$this->stockSlot] ?? $this->stockSlots['slot-1'];
@@ -281,7 +284,7 @@ new class extends Component {
 
   private function authorizeStaff(): void
   {
-    abort_unless(auth()->user()?->role === 'staff', 403);
+    abort_unless(in_array(auth()->user()?->role, ['staff', 'admin'], true), 403);
   }
 };
 ?>

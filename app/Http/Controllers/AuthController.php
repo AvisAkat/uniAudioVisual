@@ -111,8 +111,8 @@ class AuthController extends Controller
                 ]);
             }
 
-            // redirect the staff dashboard if the user is a staff member
-            if($user->role == 'staff') {
+            // Staff and admins share the department management workspace.
+            if(in_array($user->role, ['staff', 'admin'], true)) {
                 return redirect()->route('staff.dashboard')->with('toast', [
                     'title' => 'Login Successful',
                     'type' => 'success',

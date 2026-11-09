@@ -30,7 +30,7 @@ class AppServiceProvider extends ServiceProvider
         view()->composer('layouts.pages-layout', function (View $view): void {
             $user = auth()->user();
             $pendingBookingCount = match ($user?->role) {
-                'staff' => Booking::query()->where('status', 'Pending')->count(),
+                'staff', 'admin' => Booking::query()->where('status', 'Pending')->count(),
                 'student' => $user->bookings()->where('status', 'Pending')->count(),
                 default => 0,
             };

@@ -113,12 +113,12 @@
                         </a>
                     </div>
                 @endif
-                @if (auth()->user()->role == 'staff')
+                @if (in_array(auth()->user()->role, ['staff', 'admin'], true))
                     <div class="nav-group">
                         <span class="nav-group-label brand-copy">Workspace</span>
                         <a href="{{ route('staff.dashboard') }}">
                             <button class="nav-item {{ Route::Is('staff.dashboard') ? 'is-active' : '' }}" type="button"
-                                data-view="overview" data-roles="staff" aria-current="page">
+                                data-view="overview" data-roles="staff,admin" aria-current="page">
                                 <span class="nav-icon" data-icon="dashboard">
                                     <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
                                         <rect x="3" y="3" width="7" height="7" rx="2"></rect>
@@ -136,7 +136,7 @@
                         <span class="nav-group-label brand-copy">Department management</span>
                         <a href="{{ route('staff.booking_request') }}">
                             <button class="nav-item {{ Route::Is('staff.booking_request') ? 'is-active' : '' }}"
-                                type="button" data-view="requests" data-roles="staff">
+                                type="button" data-view="requests" data-roles="staff,admin">
                                 <span class="nav-icon" data-icon="requests">
                                     <svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -149,7 +149,7 @@
                         </a>
                         <a href="{{ route('staff.inventory') }}">
                             <button class="nav-item {{ Route::Is('staff.inventory') ? 'is-active' : '' }}" type="button"
-                                data-view="inventory" data-roles="staff">
+                                data-view="inventory" data-roles="staff,admin">
                                 <span class="nav-icon" data-icon="boxes">
                                     <svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="m12 2 8 4-8 4-8-4 8-4Z M4 6v6l8 4 8-4V6M4 12v6l8 4 8-4v-6M12 10v12"></path>
@@ -160,7 +160,7 @@
                         </a>
                         <a href="{{ route('staff.time_slot') }}">
                             <button class="nav-item {{ Route::Is('staff.time_slot') ? 'is-active' : '' }}" type="button"
-                                data-view="slots" data-roles="staff">
+                                data-view="slots" data-roles="staff,admin">
                                 <span class="nav-icon" data-icon="clock">
                                     <svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
                                         <circle cx="12" cy="12" r="9"></circle>
@@ -172,7 +172,7 @@
                         </a>
                         <a href="{{ route('staff.usage_history') }}">
                             <button class="nav-item {{ Route::Is('staff.usage_history') ? 'is-active' : '' }}" type="button"
-                                data-view="usage" data-roles="staff">
+                                data-view="usage" data-roles="staff,admin">
                                 <span class="nav-icon" data-icon="history">
                                     <svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M3 12a9 9 0 1 0 3-6.7L3 8"></path>
@@ -184,7 +184,7 @@
                         </a>
                         <a href="{{ route('staff.activity_log') }}">
                             <button class="nav-item {{ Route::Is('staff.activity_log') ? 'is-active' : '' }}" type="button"
-                                data-view="activity" data-roles="staff">
+                                data-view="activity" data-roles="staff,admin">
                                 <span class="nav-icon" data-icon="activity">
                                     <svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
                                         <path d="M3 12h4l2-7 4 14 2-7h6"></path>

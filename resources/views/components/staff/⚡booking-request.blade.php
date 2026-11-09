@@ -48,11 +48,13 @@ new class extends Component {
         $this->authorizeStaff();
     }
 
+    #[Computed]
     public function bookingItems()
     {
         return $this->bookingQuery()->paginate(15);
     }
 
+    #[Computed]
     public function bookingCounts(): object
     {
         $this->authorizeStaff();
@@ -65,6 +67,7 @@ new class extends Component {
             ->first();
     }
 
+    #[Computed]
     public function selectedBooking(): ?Booking
     {
         $this->authorizeStaff();
@@ -417,7 +420,7 @@ new class extends Component {
 
     private function authorizeStaff(): void
     {
-        abort_unless(auth()->user()?->role === 'staff', 403);
+        abort_unless(in_array(auth()->user()?->role, ['staff', 'admin'], true), 403);
     }
 };
 ?>
