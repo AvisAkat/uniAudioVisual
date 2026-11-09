@@ -7,6 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="description" content="University Audio Visual Equipment Booking and Management System">
     <meta name="theme-color" content="#1e3a8a">
+    <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
 
     <title>@yield('pageTitle', 'AVBMS | University Audio Visuals Department') </title>
 
