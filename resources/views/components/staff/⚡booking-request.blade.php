@@ -349,13 +349,13 @@ new class extends Component {
         });
 
         if (! $completed) {
-            $this->dispatch('toast', title: 'Booking not completed', message: 'Only an approved booking whose time slot has ended can be marked completed.', type: 'error');
+            $this->dispatch('toast', title: 'Booking not completed', message: 'Only an approved booking can be marked as returned and completed.', type: 'error');
 
             return;
         }
 
         unset($this->bookingItems, $this->bookingCounts, $this->selectedBooking);
-        $this->closeBookingModal();
+        $this->closeReturnModal();
         $this->dispatch('toast', title: 'Booking completed', message: 'The booking has been marked as completed.', type: 'success');
     }
 
@@ -551,9 +551,9 @@ new class extends Component {
                                                     <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg>
                                                 </button>
                                             @endif
-                                            @if ($booking->staus === 'Approved')
-                                                <button class="icon-button" type="button" wire:click="completeBooking({{ $booking->id }})" title="Mark completed" aria-label="Mark booking as completed">
-                                                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"></path></svg>
+                                            @if ($booking->status === 'Approved')
+                                                <button class="icon-button" type="button" wire:click="openReturnModal({{ $booking->id }})" title="Mark equipment returned" aria-label="Mark equipment returned and booking completed">
+                                                    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 14-4-4 4-4M5 10h9a5 5 0 0 1 5 5v5"></path></svg>
                                                 </button>
                                             @endif
                                         </div>
@@ -677,9 +677,9 @@ new class extends Component {
                         <button class="button button-success" type="button" wire:click="openDecisionModal({{ $booking->id }}, 'approve')">
                             <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"></path></svg> Approve
                         </button>
-                    @elseif ($booking->status === 'Approved' && ($booking->booking_date->toDateString() < today()->toDateString() || ($booking->booking_date->isToday() && $booking->end_time <= now()->format('H:i:s'))))
-                        <button class="button button-success" type="button" wire:click="completeBooking({{ $booking->id }})">
-                            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"></path></svg> Mark completed
+                    @elseif ($booking->status === 'Approved')
+                        <button class="button button-success" type="button" wire:click="openReturnModal({{ $booking->id }})">
+                            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 14-4-4 4-4M5 10h9a5 5 0 0 1 5 5v5"></path></svg> Mark returned / completed
                         </button>
                     @endif
                 </div>
@@ -750,10 +750,48 @@ new class extends Component {
         </div>
     @endif
 
-    {{-- Confirm equipment modal --}}
-    <div class="modal-backdrop" id="modal-backdrop">
-    <div class="modal modal-small" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div id="modal-content"><div class="modal-header"><div class="modal-heading"><span class="modal-heading-icon success"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m9 14-4-4 4-4M5 10h9a5 5 0 0 1 5 5v5"></path></svg></span><div><h2 id="modal-title">Confirm equipment return?</h2><p>Please review this action before continuing.</p></div></div><button class="icon-button modal-close" type="button" data-close-modal="" aria-label="Close dialog"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg></button></div><div class="modal-body"><div class="confirm-message">Mark <strong>AVB-261110-0002</strong> as completed? Confirm that 3 × High-Speed HDMI Cable (3m) has been returned and checked. This releases the reservation and records the actual return status.<br><br><strong>This session has not started yet.</strong> Confirm only if the student has already handed the equipment back, because completing it now releases those units immediately.</div></div><div class="modal-footer"><button class="button button-outline" type="button" data-close-modal="">Go back</button><button class="button button-success" type="button" id="confirm-action"><svg class="icon " viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"></path></svg> Confirm return</button></div></div>
-    </div>
-  </div>
+    @if ($showReturnModal && $this->selectedBooking)
+        @php($booking = $this->selectedBooking)
+        <div class="modal-backdrop" wire:click.self="closeReturnModal">
+            <div class="modal modal-small" role="dialog" aria-modal="true" aria-labelledby="return-modal-title">
+                <div class="modal-header">
+                    <div class="modal-heading">
+                        <span class="modal-heading-icon success">
+                            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="m9 14-4-4 4-4M5 10h9a5 5 0 0 1 5 5v5"></path>
+                            </svg>
+                        </span>
+                        <div>
+                            <h2 id="return-modal-title">Confirm equipment return?</h2>
+                            <p>{{ $this->bookingReference($booking) }} · {{ $booking->user?->name ?? 'Unknown student' }}</p>
+                        </div>
+                    </div>
+                    <button class="icon-button modal-close" type="button" wire:click="closeReturnModal" aria-label="Close dialog">
+                        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="confirm-message">
+                        Mark <strong>{{ $this->bookingReference($booking) }}</strong> as completed?
+                        Confirm that {{ $booking->quantity }} × {{ $booking->equipment?->name ?? 'the requested equipment' }}
+                        has been returned and checked. This releases its reservation.
+                        @if ($booking->booking_date->toDateString() > today()->toDateString()
+                            || ($booking->booking_date->isToday() && $booking->start_time > now()->format('H:i:s')))
+                            <br><br><strong>This session has not started yet.</strong> Confirm only if the student has already handed the equipment back.
+                        @endif
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="button button-outline" type="button" wire:click="closeReturnModal">Go back</button>
+                    <button class="button button-success" type="button" wire:click="completeBooking({{ $booking->id }})"
+                        wire:loading.attr="disabled" wire:target="completeBooking">
+                        <span wire:loading.remove wire:target="completeBooking" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"></path></svg> Confirm return
+                        </span>
+                        <span wire:loading wire:target="completeBooking">Processing…</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
