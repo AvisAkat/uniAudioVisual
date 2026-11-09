@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 new class extends Component {
@@ -29,11 +30,13 @@ new class extends Component {
         $this->equipmentId = Equipment::query()->orderBy('name')->value('id');
     }
 
+    #[Computed]
     public function equipmentOptions(): Collection
     {
         return Equipment::query()->orderBy('name')->get();
     }
 
+    #[Computed]
     public function selectedEquipment(): ?Equipment
     {
         return $this->equipmentId === null
@@ -50,6 +53,7 @@ new class extends Component {
         ];
     }
 
+    #[Computed]
     public function slotAvailability(): array
     {
         $equipment = $this->selectedEquipment;
@@ -96,6 +100,7 @@ new class extends Component {
         return $availability;
     }
 
+    #[Computed]
     public function availabilitySummary(): array
     {
         $availability = $this->slotAvailability;
@@ -118,6 +123,7 @@ new class extends Component {
         ];
     }
 
+    #[Computed]
     public function weekDates(): array
     {
         $selectedDate = $this->isValidAvailabilityDate()

@@ -5,6 +5,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 new class extends Component {
@@ -18,6 +19,7 @@ new class extends Component {
 
     public ?int $cancellingBookingId = null;
 
+    #[Computed]
     public function allBookings(): Collection
     {
         return Booking::query()
@@ -26,6 +28,7 @@ new class extends Component {
             ->get();
     }
 
+    #[Computed]
     public function bookingItems(): Collection
     {
         $searchTerm = Str::lower(trim($this->search));
@@ -49,6 +52,7 @@ new class extends Component {
         };
     }
 
+    #[Computed]
     public function viewedBooking(): ?Booking
     {
         return $this->viewingBookingId === null
@@ -56,6 +60,7 @@ new class extends Component {
             : $this->studentBookings()->with('equipment')->find($this->viewingBookingId);
     }
 
+    #[Computed]
     public function bookingToCancel(): ?Booking
     {
         return $this->cancellingBookingId === null

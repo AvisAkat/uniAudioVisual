@@ -19,6 +19,7 @@ new class extends Component {
         $this->authorizeStudent();
     }
 
+    #[Computed]
     public function dashboardStats(): array
     {
         $counts = $this->studentBookings()
@@ -36,6 +37,7 @@ new class extends Component {
         ];
     }
 
+    #[Computed]
     public function volumeChart(): array
     {
         $colors = ['var(--primary)', 'var(--accent)', 'var(--purple)', 'var(--info)', 'var(--success)'];
@@ -122,6 +124,7 @@ new class extends Component {
         ];
     }
 
+    #[Computed]
     public function volumeInsight(): string
     {
         $chart = $this->volumeChart;
@@ -140,6 +143,7 @@ new class extends Component {
             : "{$leadingBar['label']} accounts for {$leadingBar['value']} " . Str::plural('booking', $leadingBar['value']) . " ({$percentage}% of your history).";
     }
 
+    #[Computed]
     public function statusBreakdown(): array
     {
         $statusOrder = ['Pending', 'Approved', 'Rejected', 'Cancelled', 'Completed', 'Expired'];
@@ -188,6 +192,7 @@ new class extends Component {
             ->all();
     }
 
+    #[Computed]
     public function recentBookings(): Collection
     {
         return $this->studentBookings()
@@ -198,6 +203,7 @@ new class extends Component {
             ->get();
     }
 
+    #[Computed]
     public function nextReservation(): ?Booking
     {
         $now = now();
@@ -218,6 +224,7 @@ new class extends Component {
             ->first();
     }
 
+    #[Computed]
     public function nextSlotCapacity(): array
     {
         $now = now();

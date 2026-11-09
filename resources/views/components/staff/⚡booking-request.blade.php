@@ -275,8 +275,10 @@ new class extends Component {
                 ->lockForUpdate()
                 ->findOrFail($booking->equipment_id);
 
-            if ($booking->booking_date->toDateString() < today()->toDateString()
-                || ($booking->booking_date->isToday() && $booking->start_time <= now()->format('H:i:s'))) {
+            $bookingDate = Carbon::parse($booking->booking_date);
+
+            if ($bookingDate->toDateString() < today()->toDateString()
+                || ($bookingDate->isToday() && $booking->start_time <= now()->format('H:i:s'))) {
                 return ['error' => 'This booking time has already passed and cannot be approved.'];
             }
 
@@ -365,7 +367,7 @@ new class extends Component {
 
     public function bookingReference(Booking $booking): string
     {
-        return 'AVB-' . $booking->booking_date->format('ymd') . '-' . str_pad((string) $booking->id, 4, '0', STR_PAD_LEFT);
+        return 'AVB-' . Carbon::parse($booking->booking_date)->format('ymd') . '-' . str_pad((string) $booking->id, 4, '0', STR_PAD_LEFT);
     }
 
     public function formattedTime(string $time): string
