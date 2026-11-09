@@ -144,7 +144,7 @@
                                     </svg>
                                 </span>
                                 <span class="nav-label">Booking Requests</span>
-                                <span class="nav-count" id="staff-request-count">3</span>
+                                <span class="nav-count" id="staff-request-count">{{ $pendingBookingCount }}</span>
                             </button>
                         </a>
                         <a href="{{ route('staff.inventory') }}">

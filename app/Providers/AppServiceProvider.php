@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Models\Booking;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
@@ -28,13 +29,13 @@ class AppServiceProvider extends ServiceProvider
 
         view()->composer('layouts.pages-layout', function (View $view): void {
             $user = auth()->user();
+            $pendingBookingCount = match ($user?->role) {
+                'staff' => Booking::query()->where('status', 'Pending')->count(),
+                'student' => $user->bookings()->where('status', 'Pending')->count(),
+                default => 0,
+            };
 
-            $view->with(
-                'pendingBookingCount',
-                $user?->role === 'student'
-                    ? $user->bookings()->where('status', 'Pending')->count()
-                    : 0
-            );
+            $view->with('pendingBookingCount', $pendingBookingCount);
         });
     }
 
