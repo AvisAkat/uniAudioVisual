@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -23,6 +24,7 @@ new class extends Component
 
     private const SORTS = ['newest', 'oldest', 'date-asc', 'date-desc', 'student', 'status'];
 
+    #[Url]
     public string $search = '';
 
     public string $statusFilter = 'All';
