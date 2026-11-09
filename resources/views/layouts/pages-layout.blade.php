@@ -182,19 +182,23 @@
                                 <span class="nav-label">Usage History</span>
                             </button>
                         </a>
-                        <a href="{{ route('staff.activity_log') }}">
+                        @if (auth()->user()->role == 'admin')
+                    
+                        <a href="{{ route('admin.activity_log') }}">
                             <button class="nav-item {{ Route::Is('staff.activity_log') ? 'is-active' : '' }}" type="button"
-                                data-view="activity" data-roles="staff,admin">
-                                <span class="nav-icon" data-icon="activity">
-                                    <svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
-                                        <path d="M3 12h4l2-7 4 14 2-7h6"></path>
-                                    </svg>
-                                </span>
-                                <span class="nav-label">Activity Log</span>
-                            </button>
-                        </a>
+                            data-view="activity" data-roles="staff,admin">
+                            <span class="nav-icon" data-icon="activity">
+                                <svg class="icon " viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M3 12h4l2-7 4 14 2-7h6"></path>
+                                </svg>
+                            </span>
+                            <span class="nav-label">Activity Log</span>
+                        </button>
+                    </a>
+                    @endif
                     </div>
                 @endif
+                
             </nav>
             <div class="sidebar-help brand-copy">
                 <span data-icon="help">

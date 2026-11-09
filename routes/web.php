@@ -26,13 +26,19 @@ Route::middleware('auth')->group(function () {
         Route::get('/my-bookings', 'myBookings')->name('my_bookings');
     });
 
-    // Staff Routes
-    Route::prefix('staff')->name('staff.')->middleware('staff')->controller(StaffController::class)->group(function () {
+    // Staff and Admin Routes
+    Route::prefix('staff')->name('staff.')->middleware(['staff'])->controller(StaffController::class)->group(function () {
         Route::get('/dashboard', 'showDashboard')->name('dashboard');
         Route::get('/booking-request', 'bookingRequest')->name('booking_request');
-        Route::get('/activity-log', 'activityLog')->name('activity_log');
         Route::get('/inventory', 'inventory')->name('inventory');
         Route::get('/usage-history', 'usageHistory')->name('usage_history');
         Route::get('/time-slot', 'timeSlot')->name('time_slot');
+    });
+
+    //Admin Routes
+    Route::prefix('admin')->name('admin.')->middleware('admin')->controller(AdminController::class)->group(function () {
+        Route::get('/manage-users', 'manageUsers')->name('manage_users');
+        Route::get('/activity-log', 'activityLog')->name('activity_log');
+        Route::get('/system-settings', 'systemSettings')->name('system_settings');
     });
 });

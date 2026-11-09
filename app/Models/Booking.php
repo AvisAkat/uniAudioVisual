@@ -20,6 +20,8 @@ class Booking extends Model
         'additional_notes',
         'status',
         'rejection_reason',
+        'returned_by',
+        'returned_at',
     ];
 
     protected function casts(): array
@@ -27,6 +29,7 @@ class Booking extends Model
         return [
             'booking_date' => 'date',
             'quantity' => 'integer',
+            'returned_at' => 'datetime',
         ];
     }
 
@@ -44,5 +47,10 @@ class Booking extends Model
     public function equipment()
     {
         return $this->belongsTo(Equipment::class);
+    }
+
+    public function returnedBy()
+    {
+        return $this->belongsTo(User::class, 'returned_by');
     }
 }

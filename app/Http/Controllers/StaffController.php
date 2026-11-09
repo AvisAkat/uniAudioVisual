@@ -34,20 +34,6 @@ class StaffController extends Controller
         return view('pages.staff.booking-request', $data);
     }
 
-    public function activityLog()
-    {
-        
-        $data = [
-            'pageTitle' => 'Activity Log | AVBMS',
-            'appInfo' => [
-                'appTitle' => 'Activity Log',
-                'appDescription' => 'A chronological audit of important system events'
-                ]
-        ];
-        
-        return view('pages.staff.activity-log', $data);
-    }
-
     public function inventory()
     {
         

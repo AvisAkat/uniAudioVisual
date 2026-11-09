@@ -343,7 +343,11 @@ new class extends Component {
                 return false;
             }
 
-            $booking->update(['status' => 'Completed']);
+            $booking->update([
+                'status' => 'Completed',
+                'returned_by' => auth()->id(),
+                'returned_at' => now(),
+            ]);
 
             return true;
         });
