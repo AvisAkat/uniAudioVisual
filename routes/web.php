@@ -6,7 +6,8 @@ use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StudentController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome')->name('home');
+//Home Route
+Route::get('/', [AuthController::class, 'showLoginForm'])->name('home');
 
 // Authentication Routes
 Route::prefix('auth')->name('auth.')->middleware('guest')->controller(AuthController::class)->group(function () {
