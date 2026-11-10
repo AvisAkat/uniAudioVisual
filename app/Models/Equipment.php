@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-
+use Illuminate\Database\Eloquent\Model;
 
 class Equipment extends Model
 {
@@ -24,12 +23,11 @@ class Equipment extends Model
         'location',
     ];
 
-     protected function casts(): array
+    protected function casts(): array
     {
         return [
             'total_quantity' => 'integer',
             'available_quantity' => 'integer',
         ];
     }
-
 }

@@ -6,7 +6,7 @@ use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StudentController;
 use Illuminate\Support\Facades\Route;
 
-//Home Route
+// Home Route
 Route::get('/', [AuthController::class, 'showLoginForm'])->name('home');
 
 // Authentication Routes
