@@ -9,6 +9,7 @@
             <p>Use your university credentials to manage equipment bookings.</p>
         </div>
         <form id="login-form" method="POST" action="{{ route('auth.login_handler') }}">
+            @csrf
             <div class="field-group">
                 <label for="login-email">Email address / ID</label>
                 <div class="input-with-icon"><span data-icon="mail"><svg class="icon " viewBox="0 0 24 24"
