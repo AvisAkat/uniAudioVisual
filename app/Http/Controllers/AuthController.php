@@ -31,7 +31,7 @@ class AuthController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'university_id' => ['required', 'digits:8', 'max:8', Rule::unique(User::class, 'university_id')],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique(User::class, 'email')],
-            'password' => ['required', 'string', 'confirmed', Password::defaults() ?? Password::min(8)],
+            'password' => ['required', 'string', 'confirmed', 'min:8'],
         ], [], [
             'university_id' => 'student ID',
         ]);
