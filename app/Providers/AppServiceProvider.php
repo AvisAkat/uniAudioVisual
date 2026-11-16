@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Booking;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
@@ -26,9 +27,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (app()->isProduction()) {
-            URL::forceScheme('https');
-        }
+       URL::forceHttps(app()->isProduction());
+
+        // if (app()->isProduction()) {
+        //     URL::forceScheme('https');
+        // }
 
         $this->configureDefaults();
 
